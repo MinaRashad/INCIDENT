@@ -1,8 +1,8 @@
 use crate::terminal;
 use crate::menu_components;
+use crate::windows;
 
 use std::io;
-
 
 // main menu
 // just the title screen, and input block
@@ -15,9 +15,9 @@ fn title()->String{
 
     let title = terminal::bold(title);
 
-    let title = terminal::foreground_color(title, [100,250,100]);
+    
 
-    title
+    terminal::foreground_color(title, [100,250,100])
 }
 
 pub fn title_page(){
@@ -50,7 +50,8 @@ pub fn main_menu(){
     
     if selection == 0{
         // start
-        todo!("Start the game")
+        //todo!("Start the game")
+        windows::start_mode("chat");
     }else if selection == 1 {
         // options
         todo!("Options")
@@ -89,3 +90,6 @@ pub fn print_greeting(color1:[u8;3], bgcolor1:[u8;3],
 
 
 
+pub fn chat(){
+    println!("Chat is working")
+}

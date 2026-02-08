@@ -212,6 +212,20 @@ pub fn show_cursor(){
 }
 
 
+// alternative buffer
+// for better screen cleanup
+
+pub fn enter_alternative_buffer(){
+    print!("\x1B[?1049h");
+    io::stdout().flush()
+        .expect("Failed to flush");
+}
+
+pub fn exit_alternative_buffer(){
+    print!("\x1B[?1049l");
+    io::stdout().flush()
+        .expect("Failed to flush");
+}
 
 
 
