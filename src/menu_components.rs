@@ -15,7 +15,7 @@ pub fn check_password(real_password:&str)-> bool{
         io::stdin()
         .read_line(&mut password)
         .expect("Failed");
-        if password.trim() != real_password.to_string() {
+        if password.trim() != real_password {
             println!("{}", 
                 terminal::foreground_color("incorrect password".to_string(),
                  [200,100,100]));
@@ -38,17 +38,17 @@ pub fn check_password(real_password:&str)-> bool{
 fn display_options(options:Vec<String>, centered:bool) -> Vec<String>{
     for i in 0..options.len(){
         let option = &options[i];
-        let option = format!("{option}");
+        let option = option.to_string();
         let option = if centered{terminal::center(option)} 
                      else {option};
-        print!("{option}\n");
+        println!("{option}");
     }
 
     // flush everything
     io::stdout().flush()
             .expect("Failed to flush");
 
-    return options;
+    options
 }
 
 fn highlight_option(option:String, num_options:usize,
@@ -104,7 +104,7 @@ pub fn multichoice(title:&str, options:Vec<&str>,
 
     terminal::hide_cursor();
     // handle unexpected cases
-    if options.len() == 0 {panic!("There are no options")};
+    if options.is_empty() {panic!("There are no options")};
     // print the title
     let title = if centered {terminal::center(title.to_string())} 
                         else{title.to_string()};
@@ -114,8 +114,8 @@ pub fn multichoice(title:&str, options:Vec<&str>,
                        else{help};
     let help = terminal::blink(help);
     
-    print!("{}\n",title);
-    print!("{}\n", help);
+    println!("{}",title);
+    println!("{}", help);
 
     let options =
         options.iter().map(
@@ -168,7 +168,7 @@ pub fn multichoice(title:&str, options:Vec<&str>,
     }
 
     terminal::show_cursor();
-    return curr_selection;
+    curr_selection
 
 
 }
@@ -228,6 +228,6 @@ pub fn date()->Result<[u64; 3],time::SystemTimeError>
 
      
 
-    return Ok([curr_year,curr_month,days]);
+    Ok([curr_year,curr_month,days])
 }
 

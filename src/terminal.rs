@@ -1,10 +1,8 @@
 use terminal_size::{Width, Height, terminal_size};
 use std::io::{self, Write};
 use std::time::Duration;
-use crossterm;
 use crossterm::event::{Event, KeyCode, poll, read};
 
-use figleter;
 
 /*
     Terminal module
@@ -21,10 +19,10 @@ pub fn size() -> [usize;2]
     let size: Option<(Width, Height)> = terminal_size();
 
     if let Some((Width(w), Height(h))) = size {
-        return [w as usize, h as usize]
+        [w as usize, h as usize]
     }else{
         println!("Unable to retrieve the terminal size");
-        return [0,0];
+        [0,0]
     }
 }
 
@@ -110,10 +108,10 @@ pub fn center_multiline(text:String)->String{
         
         result = result + &centered_line;
 
-        result = result + "\n";
+        result += "\n";
 
     }
-    return result;
+    result
 }
 
 
@@ -126,31 +124,32 @@ pub fn get_input_now() -> KeyCode {
         expect("Failed to enter raw mode");
 
     // drain all queued inputs
-    while poll(Duration::from_millis(0)).unwrap() {
+    while poll(Duration::from_millis(0))
+         .is_ok_and(|x| x) 
+    {
         let _ = read();
     }
     
-    match poll(Duration::from_millis(50)) {
-        Ok(_)=> {
-            // now we polled we can read without blocking
-            match read() {
-                Ok(Event::Key(event))=>{
-                    input = event.code;
-                },
-                Ok(_) =>{}
-                Err(_) =>{}
-            }
+    if poll(Duration::from_millis(50))
+        .is_ok_and(|x| x) 
+    {
+        // now we polled we can read without blocking
+        match read() {
+            Ok(Event::Key(event))=>{
+                input = event.code;
+            },
+            Ok(_) =>{}
+            Err(_) =>{}
+        }
 
 
-        },
-        Err(_)=> {}
     } 
 
     
     crossterm::terminal::disable_raw_mode().
         expect("Failed to exit raw mode");
 
-    return input;
+    input
 }
 
 // blocking version 
@@ -158,7 +157,8 @@ pub fn get_input() -> KeyCode{
     let mut input = KeyCode::Null;
 
     // drain all queued inputs
-    while poll(Duration::from_millis(0)).unwrap() {
+    while poll(Duration::from_millis(0))
+         .is_ok_and(|x| x)  {
         let _ = read();
     }
 
@@ -170,7 +170,7 @@ pub fn get_input() -> KeyCode{
                 Err(_) =>{}
             }
 
-    return input
+    input
 }
 
 // cursor
@@ -224,11 +224,11 @@ pub fn figlet_figure(message:String)-> String{
     let figure = font.convert(&message);
 
     match figure {
-        Some(_)=>{
-            figure.unwrap().to_string()
+        Some(msg)=>{
+           msg.to_string()
         },
         None =>{
-            return message;
+            message
         }
     }
 }

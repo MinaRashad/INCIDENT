@@ -17,7 +17,7 @@ fn title()->String{
 
     let title = terminal::foreground_color(title, [100,250,100]);
 
-    return title;
+    title
 }
 
 pub fn title_page(){
