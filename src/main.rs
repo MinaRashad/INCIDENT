@@ -19,7 +19,9 @@ enum GameState{
     TitleScreen,
     MainMenu,
     Options,
+    // main game loop
     Startup,
+    MainConsole,
     Chats,
     Docs,
     Exit
@@ -31,6 +33,7 @@ impl GameState {
                     GameState::TitleScreen => views::title_page(),
                     GameState::MainMenu => views::main_menu(),
                     GameState::Startup => views::game::start_up(),
+                    GameState::MainConsole => views::game::main_console(),
                     GameState::Options => todo!("No options yet"),
                     GameState::Chats => views::chat::start(),
                     GameState::Docs => views::docs::start(),
@@ -48,7 +51,7 @@ fn main() {
 
     let _ = init();
 
-    
+
     if args.len() > 1 {
         if args[1] == "--chat".to_string(){
             game_state = GameState::Chats

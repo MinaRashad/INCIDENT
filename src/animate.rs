@@ -3,7 +3,7 @@ use std::{io::{self, Write, Error}, thread, time::Duration};
 use crate::terminal;
 use crate::sound;
 
-pub fn typer(msg:&str,delay_ms:u64){
+pub fn typer(msg:&str,delay_ms:u64, sound:bool){
 
     for c in msg.chars(){
         print!("{c}");
@@ -11,7 +11,7 @@ pub fn typer(msg:&str,delay_ms:u64){
             Ok(_) => {},
             Err(_) => panic!("Didnt flush")
         };
-        if c.is_alphanumeric() &&
+        if sound &&
            let Some(duration) = sound::click(){
             thread::sleep(duration);
         }else{

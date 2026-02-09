@@ -12,8 +12,7 @@ use crossterm::event::{Event, KeyCode, poll, read};
     2. Changing low level cursor control
 */
 // constants
-const CSI :&str="\x1B[";
-
+pub const CSI :&str="\x1B[";
 
 // terminal utility
 pub fn size() -> [usize;2]
