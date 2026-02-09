@@ -1,8 +1,14 @@
 use crate::terminal;
 use crate::menu_components;
 use crate::windows;
+use crate::GameState;
+
+pub mod chat;
+pub mod docs;
+pub mod game;
 
 use std::io;
+
 
 // main menu
 // just the title screen, and input block
@@ -20,23 +26,18 @@ fn title()->String{
     terminal::foreground_color(title, [100,250,100])
 }
 
-pub fn title_page(){
+pub fn title_page()->GameState{
     terminal::clear_screen();
 
     println!("{}",title());
 
-    let sub = "Press enter to start".to_string();
-    let sub = terminal::center(sub);
-    let sub = terminal::blink(sub);
-    println!("{}",sub);
-
-    let mut buf = String::new();
-    io::stdin().read_line(&mut buf).expect("An error occured");
+    menu_components::wait_for_input();
     terminal::clear_screen();
 
+    GameState::MainMenu
 }
 
-pub fn main_menu(){
+pub fn main_menu()->GameState{
     terminal::clear_screen();
 
     println!("{}",title());
@@ -49,15 +50,11 @@ pub fn main_menu(){
         );
     
     if selection == 0{
-        // start
-        //todo!("Start the game")
-        windows::start_mode("chat");
+        return GameState::Startup;
     }else if selection == 1 {
-        // options
-        todo!("Options")
+        return GameState::Options;
     } else{
-        //exit
-        std::process::exit(0);
+        return GameState::Exit;
     }
    
 }
@@ -86,10 +83,4 @@ pub fn print_greeting(color1:[u8;3], bgcolor1:[u8;3],
     let date = terminal::background_color(date, bgcolor2);
 
     println!("{date}");
-}
-
-
-
-pub fn chat(){
-    println!("Chat is working")
 }

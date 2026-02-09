@@ -5,19 +5,21 @@ use std::time;
 
 use crate::terminal;
 
-pub fn check_password(real_password:&str)-> bool{
+pub fn check_password(real_password:&str)->bool{
     
     println!("Please enter your password: ");
 
     let mut password:String = String::new();
+    let mut attempts: i32 = 2;
 
-    loop {
+    while attempts > 3 {
         io::stdin()
         .read_line(&mut password)
         .expect("Failed");
         if password.trim() != real_password {
+            attempts -= 1;
             println!("{}", 
-                terminal::foreground_color("incorrect password".to_string(),
+                terminal::foreground_color(format!("incorrect password ({attempts} REMAINING)"),
                  [200,100,100]));
             password = String::new(); // remove current data
         }
@@ -28,7 +30,8 @@ pub fn check_password(real_password:&str)-> bool{
 
             return true;
         }
-    }
+    };
+    return false;
 }
 
 
@@ -231,3 +234,12 @@ pub fn date()->Result<[u64; 3],time::SystemTimeError>
     Ok([curr_year,curr_month,days])
 }
 
+pub fn wait_for_input(){
+    let sub = "Press anything to Continue...".to_string();
+    let sub = terminal::center(sub);
+    let sub = terminal::blink(sub);
+    println!("{}",sub);
+
+    let mut buf = String::new();
+    io::stdin().read_line(&mut buf).expect("An error occured");
+}

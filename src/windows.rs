@@ -33,7 +33,6 @@ pub fn start_mode(name:&str){
         None=> panic!("Unable to get exe path")
     };
 
-    let command = format!("{exe_path} --{name}");
 
     let _ = match TERMINAL {
         "cmd" =>{

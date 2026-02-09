@@ -11,6 +11,8 @@ use crossterm::event::{Event, KeyCode, poll, read};
     1. Changing how the text looks on the screen
     2. Changing low level cursor control
 */
+// constants
+const CSI :&str="\x1B[";
 
 
 // terminal utility
@@ -27,7 +29,7 @@ pub fn size() -> [usize;2]
 }
 
 pub fn clear_screen(){
-    print!("\x1B[2J\x1B[1;1H");
+    print!("{CSI}2J{CSI}1;1H");
     io::stdout().flush()
         .expect("Failed to flush");
 }
@@ -48,14 +50,14 @@ pub fn set_title(title:&str){
 // color functions
 
 pub fn foreground_color(text:String,color:[u8;3])->String{
-    format!("\x1B[38;2;{R};{G};{B}m{text}\x1B[0m", 
+    format!("{CSI}38;2;{R};{G};{B}m{text}{CSI}0m", 
         R = color[0],
         G = color[1],
         B = color[2])
 }
 
 pub fn background_color(text:String,color:[u8;3])->String{
-    format!("\x1B[48;2;{R};{G};{B}m{text}\x1B[0m", 
+    format!("{CSI}48;2;{R};{G};{B}m{text}{CSI}0m", 
         R = color[0],
         G = color[1],
         B = color[2])
@@ -63,16 +65,16 @@ pub fn background_color(text:String,color:[u8;3])->String{
 
 // format
 pub fn bold(text:String) -> String{
-    format!("\x1B[1m{text}\x1B[0m")
+    format!("{CSI}1m{text}{CSI}0m")
 }
 
 pub fn invert(text:String) -> String{
-    format!("\x1B[7m{text}\x1B[0m")
+    format!("{CSI}7m{text}{CSI}0m")
 }
 
 // animation
 pub fn blink(text:String) -> String{
-    format!("\x1B[5m{text}\x1B[0m")
+    format!("{CSI}5m{text}{CSI}0m")
 }
 
 
@@ -95,7 +97,7 @@ pub fn center(text:String)->String{
     // in ANSI we will set the cusoror position to
     // first column then
     
-    format!("\x1B[{space}C{text}")
+    format!("{CSI}{space}C{text}")
 }
 
 pub fn center_multiline(text:String)->String{
@@ -175,22 +177,22 @@ pub fn get_input() -> KeyCode{
 
 // cursor
 pub fn move_cursor_up(rows:usize){
-    print!("\x1B[{rows}A");
+    print!("{CSI}{rows}A");
     io::stdout().flush()
         .expect("Failed to flush");
 }
 pub fn move_cursor_down(rows:usize){
-    print!("\x1B[{rows}B");
+    print!("{CSI}{rows}B");
     io::stdout().flush()
         .expect("Failed to flush");
 }
 pub fn move_cursor_right(cols:usize){
-    print!("\x1B[{cols}C");
+    print!("{CSI}{cols}C");
     io::stdout().flush()
         .expect("Failed to flush");
 }
 pub fn move_cursor_left(cols:usize){
-    print!("\x1B[{cols}D");
+    print!("{CSI}{cols}D");
     io::stdout().flush()
         .expect("Failed to flush");
 }
@@ -201,12 +203,12 @@ pub fn move_cursor_linestart(){
 }
 
 pub fn hide_cursor(){
-    print!("\x1B[?25l");
+    print!("{CSI}?25l");
     io::stdout().flush()
         .expect("Failed to flush");
 }
 pub fn show_cursor(){
-    print!("\x1B[?25h");
+    print!("{CSI}?25h");
     io::stdout().flush()
         .expect("Failed to flush");
 }
@@ -216,13 +218,13 @@ pub fn show_cursor(){
 // for better screen cleanup
 
 pub fn enter_alternative_buffer(){
-    print!("\x1B[?1049h");
+    print!("{CSI}?1049h");
     io::stdout().flush()
         .expect("Failed to flush");
 }
 
 pub fn exit_alternative_buffer(){
-    print!("\x1B[?1049l");
+    print!("{CSI}?1049l");
     io::stdout().flush()
         .expect("Failed to flush");
 }
