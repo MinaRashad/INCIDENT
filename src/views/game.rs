@@ -31,12 +31,13 @@ pub fn start_up()->GameState{
     
     // System initialization - Green for OK status
     let ok_msg = |text: &str| {
+        animate::loading_bar(15);
+
         terminal::foreground_color(
             format!("[OK] {}", text),
             [0, 255, 0] // Green
         )
     };
-    
     animate::typer(&format!("{}\n", ok_msg("Evidence Management System online")), 5, false);
     animate::typer(&format!("{}\n", ok_msg("Case Database connected")), 5, false);
     animate::typer(&format!("{}\n", ok_msg("Forensics Lab Interface ready")), 5, false);
@@ -137,7 +138,7 @@ pub fn start_up()->GameState{
     animate::typer(&format!("{}\n", case_separator), 8, false);
     
     let case_title = terminal::bold(
-        terminal::foreground_color("CASE FILE: INCIDENT-7D3".to_string(), [255, 255, 255])
+        terminal::foreground_color("CASE FILE: 2024-07438".to_string(), [255, 255, 255])
     );
     animate::typer(&format!("{}\n", case_title), 10, false);
     animate::typer(&format!("{}\n", case_separator), 8, false);
@@ -145,36 +146,36 @@ pub fn start_up()->GameState{
     let status = terminal::foreground_color(
         "STATUS    : ".to_string(),
         [200, 200, 200]
-    ) + &terminal::foreground_color("COLD CASE - UNSOLVED".to_string(), [255, 100, 100]);
+    ) + &terminal::foreground_color("OPEN - UNSOLVED".to_string(), [255, 100, 100]);
     animate::typer(&format!("{}\n", status), 10, false);
     
     if let Ok(date) = menu_components::date(){
         let reported_date = format!(
-            "REPORTED  : {0}-{1}-{2} 03:47:22 UTC\n"
-                ,date[0], date[1], date[2]);
+            "REPORTED  : {0}/{1}/{2} 04:12 AM\n"
+                ,date[1], date[2], date[0]);
         animate::typer(&reported_date, 10, false);
     };
-    animate::typer("LOCATION  : Luxury Residential Compound, Unit 1847\n", 10, false);
-    animate::typer("VICTIM    : Male, 41 years old\n", 10, false);
+    animate::typer("LOCATION  : 1847 Riverside Towers, Apt 12B\n", 10, false);
+    animate::typer("VICTIM    : Marcus Chen, 41, Software Consultant\n", 10, false);
     animate::typer(&format!("{}\n\n", case_separator), 8, false);
     
     let summary_header = terminal::bold(
-        terminal::foreground_color("CASE SUMMARY:".to_string(), [255, 200, 0])
+        terminal::foreground_color("INCIDENT SUMMARY:".to_string(), [255, 200, 0])
     );
     animate::typer(&format!("{}\n", summary_header), 10, false);
-    animate::typer("- Cause of Death: Gunshot wound, posterior cranium\n", 8, false);
-    animate::typer("- Point of Entry: Unknown (No signs of forced entry)\n", 8, false);
-    animate::typer("- Security Footage: 47-minute gap during TOD window\n", 8, false);
-    animate::typer("- Scene: All doors/windows locked from interior\n", 8, false);
+    animate::typer("- Single GSW to back of head, close range\n", 8, false);
+    animate::typer("- No forced entry; deadbolt engaged from inside\n", 8, false);
+    animate::typer("- Hallway cameras offline 11:34 PM - 12:21 AM\n", 8, false);
+    animate::typer("- Neighbor reported hearing argument around midnight\n", 8, false);
     
-    let ruling = terminal::foreground_color("- Ruling: ".to_string(), [200, 200, 200]) 
+    let ruling = terminal::foreground_color("- M.E. Ruling: ".to_string(), [200, 200, 200]) 
         + &terminal::bold(terminal::foreground_color("Homicide".to_string(), [255, 0, 0]));
     animate::typer(&format!("{}\n\n", ruling), 8, false);
     
     thread::sleep(Duration::from_millis(400));
     
     let evidence_header = terminal::bold(
-        terminal::foreground_color("EVIDENCE LOCKER:".to_string(), [255, 200, 0])
+        terminal::foreground_color("AVAILABLE EVIDENCE:".to_string(), [255, 200, 0])
     );
     animate::typer(&format!("{}\n", evidence_header), 10, false);
     
@@ -185,11 +186,11 @@ pub fn start_up()->GameState{
         )
     };
     
-    animate::typer(&evidence_item("1", "Digital Communications - Victim's message history"), 8, false);
-    animate::typer(&evidence_item("2", "Security Recordings - Building surveillance system"), 8, false);
-    animate::typer(&evidence_item("3", "Digital Forensics - Recovered file system image"), 8, false);
-    animate::typer(&evidence_item("4", "Medical Examiner - Complete autopsy report"), 8, false);
-    animate::typer(&evidence_item("5", "Witness Statements - Building residents & staff\n"), 8, false);
+    animate::typer(&evidence_item("1", "Phone records & text messages (last 72 hours)"), 8, false);
+    animate::typer(&evidence_item("2", "Building security footage (partial)"), 8, false);
+    animate::typer(&evidence_item("3", "Laptop hard drive image"), 8, false);
+    animate::typer(&evidence_item("4", "Autopsy report & toxicology screen"), 8, false);
+    animate::typer(&evidence_item("5", "Witness interviews (9 statements)\n"), 8, false);
     
     thread::sleep(Duration::from_millis(300));
     

@@ -1,7 +1,11 @@
 
 use std::io::{self, Write};
 use std::thread::sleep;
-use std::time;
+use std::time::{self, Duration};
+
+use rand::distr::Distribution;
+use rand::rand_core::block;
+use rand::{Rng, RngCore, random};
 
 use crate::terminal;
 
@@ -243,3 +247,5 @@ pub fn wait_for_input(){
     let mut buf = String::new();
     io::stdin().read_line(&mut buf).expect("An error occured");
 }
+
+
