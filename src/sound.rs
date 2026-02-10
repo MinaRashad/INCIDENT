@@ -20,11 +20,12 @@ struct Stream{
     output: OutputStream
 }
 
-enum SoundCategory{
+pub enum SoundCategory{
     Space,
     Type,
     Boot,
-    Music
+    Music,
+    GUIFeedback,
 }
 
 impl SoundCategory {
@@ -33,7 +34,8 @@ impl SoundCategory {
             SoundCategory::Space => "space".to_string(),
             SoundCategory::Type => "type".to_string(),
             SoundCategory::Boot => "boot".to_string(),
-            SoundCategory::Music => "music".to_string()
+            SoundCategory::Music => "music".to_string(),
+            SoundCategory::GUIFeedback => "gui_feedback".to_string()
         }
     }
 }
@@ -118,7 +120,7 @@ fn stream_and_sound(sound:SoundCategory)->Option<(&'static OutputStream, &'stati
     return Some((stream, &sounds[idx]));
 }
 
-fn play(sound:SoundCategory)->Option<Duration>{
+pub fn play(sound:SoundCategory)->Option<Duration>{
 
     let (
         stream, 

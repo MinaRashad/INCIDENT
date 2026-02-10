@@ -3,11 +3,8 @@ use std::io::{self, Write};
 use std::thread::sleep;
 use std::time::{self, Duration};
 
-use rand::distr::Distribution;
-use rand::rand_core::block;
-use rand::{Rng, RngCore, random};
-
 use crate::terminal;
+use crate::sound;
 
 pub fn check_password(real_password:&str)->bool{
     
@@ -161,6 +158,8 @@ pub fn multichoice(title:&str, options:Vec<&str>,
                         centered);
 
             now = time::SystemTime::now();
+
+            sound::play(sound::SoundCategory::GUIFeedback);
 
         }
         if input.is_down() {
