@@ -12,7 +12,7 @@ pub fn typer(msg:&str,delay_ms:u64, sound:bool){
             Err(_) => panic!("Didnt flush")
         };
         if sound &&
-           let Some(duration) = sound::click(){
+           let Some(duration) = sound::keystroke_play(c){
             thread::sleep(duration);
         }else{
             thread::sleep(Duration::from_millis(delay_ms));
