@@ -7,8 +7,10 @@ use rascii_art;
 
 use crate::terminal;
 use crate::sound;
+use crate::GameState;
 
-pub fn check_password(real_password:&str)->bool{
+pub fn check_password(real_password:&str, 
+        from:GameState, to:GameState)->GameState{
     
     println!("Please enter your password: ");
 
@@ -31,10 +33,10 @@ pub fn check_password(real_password:&str)->bool{
                 terminal::foreground_color("ACCESS GRANTED".to_string(), 
                  [100,200,100]));
 
-            return true;
+            return from;
         }
     };
-    return false;
+    return to;
 }
 
 
@@ -195,7 +197,7 @@ pub fn display_image(path: &str)-> Option<String>{
     let result = rascii_art::render_to(path, &mut image_ascii, 
         &rascii_art::RenderOptions::new()
         .colored(true)
-        .height(h)
+        .width(h*2)
         .charset(rascii_art::charsets::BLOCK)
         );
     
