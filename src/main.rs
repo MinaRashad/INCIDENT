@@ -3,9 +3,13 @@ mod menu_components;
 mod views;
 mod animate;
 mod windows;
+mod data;
 mod sound;
 
+
 use std::{env, io::Error};
+
+use crate::views::game;
 
 struct CleanUp;
 
@@ -72,6 +76,7 @@ fn main() {
 fn init()->Result<(), Error>{
     terminal::enter_alternative_buffer();
     sound::init()?;
+    data::player::init_player();
 
     Ok(())
 }
