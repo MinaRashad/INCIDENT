@@ -1,4 +1,4 @@
-use std::{io::{self, Write, Error}, thread, time::Duration};
+use std::{io::{self, Write}, thread, time::Duration};
 
 use crate::terminal;
 use crate::sound;

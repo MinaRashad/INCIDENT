@@ -1,8 +1,7 @@
 
 use std::io::{self, Write};
-use std::path::Path;
 use std::thread::sleep;
-use std::time::{self, Duration};
+use std::time::{self};
 use rascii_art;
 
 use crate::terminal;

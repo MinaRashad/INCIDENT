@@ -1,5 +1,4 @@
-use std::process::{self, Child};
-use std::io::{self, Stdin, Stdout};
+use std::io::{Stdin, Stdout};
 use std::env;
 // This module is to manage multiple
 // windows. Nothing related to the windows

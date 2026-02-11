@@ -9,7 +9,6 @@ mod sound;
 
 use std::{env, io::Error};
 
-use crate::views::game;
 
 struct CleanUp;
 

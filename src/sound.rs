@@ -1,15 +1,12 @@
-use rodio::mixer::Mixer;
-use rodio::source;
 use rodio::{Decoder, OutputStream, source::Source};
 use std::fs::{self, File};
 use std::io::{BufReader, Error};
-use std::collections::{self, HashMap, hash_map};
+use std::collections::{self, HashMap};
 use std::sync::OnceLock;
 use std::time::Duration;
 use rand::Rng;
 
 
-use crate::menu_components;
 
 
 struct Sound{

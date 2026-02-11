@@ -1,5 +1,4 @@
 
-use crate::terminal;
 use crate::menu_components;
 use crate::GameState;
 use crate::data::player;

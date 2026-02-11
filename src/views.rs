@@ -1,13 +1,11 @@
 use crate::terminal;
 use crate::menu_components;
-use crate::windows;
 use crate::GameState;
 
 pub mod chat;
 pub mod docs;
 pub mod game;
 
-use std::io;
 
 
 // main menu
