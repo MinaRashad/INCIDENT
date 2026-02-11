@@ -191,7 +191,7 @@ pub fn start_up()->GameState{
     animate::typer(&evidence_item("2", "Building security footage (partial)"), 8, false);
     animate::typer(&evidence_item("3", "Laptop hard drive image"), 8, false);
     animate::typer(&evidence_item("4", "Autopsy report & toxicology screen"), 8, false);
-    animate::typer(&evidence_item("5", "Witness interviews (9 statements)\n"), 8, false);
+    animate::typer(&evidence_item("5", "Witness interviews\n"), 8, false);
     
     thread::sleep(Duration::from_millis(300));
     

@@ -8,7 +8,6 @@ pub static PLAYER:OnceLock<Person> = OnceLock::new();
 
 
 pub fn init_player(){
-    println!("Chat is working");
     let user = 
             whoami::realname()
             .or(whoami::username());
@@ -19,7 +18,7 @@ pub fn init_player(){
     };
     let user = Person {name:user};
 
-    PLAYER.set(user);
+    let _ = PLAYER.set(user);
 }
 
 pub fn get_player()->Person{

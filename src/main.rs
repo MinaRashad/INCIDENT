@@ -59,7 +59,7 @@ fn main() {
         if args[1] == "--chat".to_string(){
             game_state = GameState::Chats
         }else if args[1] == "--docs".to_string() {
-            game_state = GameState::Chats
+            game_state = GameState::Docs
         }
     }
     

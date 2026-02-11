@@ -1,9 +1,11 @@
 
 use std::io::{self, Write};
+use std::path::PathBuf;
 use std::thread::sleep;
 use std::time::{self};
 use rascii_art;
 
+use crate::data::{self, ImageDoc};
 use crate::terminal;
 use crate::sound;
 use crate::GameState;
@@ -184,20 +186,30 @@ pub fn multichoice(title:&str, options:Vec<&str>,
 
 
 // graphical functions
-pub fn display_image(path: &str)-> Option<String>{
+pub fn display_image(img:ImageDoc, w:Option<u32>, h:Option<u32>)-> Option<String>{
 
     let mut image_ascii = String::new();
-    let [w, h] = terminal::size();
-    let w = w as u32;
-    let h= h as u32;
+    let options = rascii_art::RenderOptions::new();
+    let options = options.colored(true);
+    let mut options = options.charset(rascii_art::charsets::BLOCK);
 
-    let w = (70*w)/100;
+    if let Some(w) = w{
+        options = options.width(w);
+    }
+    
+    if let Some(h) = h {
+        options = options.height(h);
+    }
+
+    let path = match img {
+        ImageDoc::Image(path)=>path,
+        ImageDoc::EncyptedImage(path, _ ) => panic!("Cant decrypt, please only pass plain images")
+    };
+
+    let path = path.to_str()?;
 
     let result = rascii_art::render_to(path, &mut image_ascii, 
-        &rascii_art::RenderOptions::new()
-        .colored(true)
-        .width(h*2)
-        .charset(rascii_art::charsets::BLOCK)
+        &options
         );
     
     if result.is_ok(){
@@ -208,7 +220,16 @@ pub fn display_image(path: &str)-> Option<String>{
 }
 
 pub fn print_logo(){
-    if let Some(img) = display_image("assets/images/OS_logo.png")
+    let [w, h] = terminal::size();
+    let w = w as u32;
+    let h= h as u32;
+
+    let w = (70*w)/100;
+    let logo_path = data::docs::OS_LOGO_PATH;
+    let logo_path = PathBuf::from(logo_path);
+    let logo = ImageDoc::Image(logo_path);
+    
+    if let Some(img) = display_image(logo, Some(w), None)
     {
         //let img = terminal::center_multiline(img);
         terminal::move_cursor_linestart();
