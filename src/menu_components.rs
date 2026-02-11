@@ -1,7 +1,9 @@
 
 use std::io::{self, Write};
+use std::path::Path;
 use std::thread::sleep;
 use std::time::{self, Duration};
+use rascii_art;
 
 use crate::terminal;
 use crate::sound;
@@ -180,7 +182,40 @@ pub fn multichoice(title:&str, options:Vec<&str>,
 }
 
 
-// not important for now
+// graphical functions
+pub fn display_image(path: &str)-> Option<String>{
+
+    let mut image_ascii = String::new();
+    let [w, h] = terminal::size();
+    let w = w as u32;
+    let h= h as u32;
+
+    let w = (70*w)/100;
+
+    let result = rascii_art::render_to(path, &mut image_ascii, 
+        &rascii_art::RenderOptions::new()
+        .colored(true)
+        .height(h)
+        .charset(rascii_art::charsets::BLOCK)
+        );
+    
+    if result.is_ok(){
+        return Some(image_ascii);
+    }
+
+    return None
+}
+
+pub fn print_logo(){
+    if let Some(img) = display_image("assets/images/OS_logo.png")
+    {
+        //let img = terminal::center_multiline(img);
+        terminal::move_cursor_linestart();
+        println!("{}",img)
+    }
+}
+
+// utilities used inside views
 pub fn date()->Result<[u64; 3],time::SystemTimeError>
 {
     

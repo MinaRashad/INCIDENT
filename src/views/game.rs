@@ -11,6 +11,7 @@ use std::time::Duration;
 pub fn start_up()->GameState{
 
     sound::boot_play();
+    menu_components::print_logo();
     // Police system boot sequence
     let boot_header = terminal::foreground_color(
         "POLICE INVESTIGATION NETWORK - TERMINAL BOOT v3.2.1".to_string(),

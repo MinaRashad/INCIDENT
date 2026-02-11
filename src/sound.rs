@@ -77,8 +77,6 @@ pub fn init()-> Result<(), Error>{
 
         }; 
 
-        println!("checking: {sound_category}");
-
         // add all the files buffered decoder of buffer
         // i know this sounds stupid
         for entry in fs::read_dir(folderpath)?{

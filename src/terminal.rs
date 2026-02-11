@@ -2,6 +2,7 @@ use terminal_size::{Width, Height, terminal_size};
 use std::io::{self, Write};
 use std::time::Duration;
 use crossterm::event::{Event, KeyCode, poll, read};
+use strip_ansi_escapes::strip;
 
 
 /*
@@ -80,7 +81,8 @@ pub fn blink(text:String) -> String{
 // positioning
 pub fn center(text:String)->String{
     let [w, _] = size();
-    let text_len = text.len();
+    let stripped = strip(&text);
+    let text_len = stripped.len();
 
     if text_len >= w {
         panic!("The text is too long to be centered")
@@ -93,10 +95,10 @@ pub fn center(text:String)->String{
     
     let space = (w - text_len) / 2;
 
-    // in ANSI we will set the cusoror position to
+    // in ANSI we will set the cursor position to
     // first column then
     
-    format!("{CSI}{space}C{text}")
+    format!("{CSI}{space}G{text}")
 }
 
 pub fn center_multiline(text:String)->String{
