@@ -7,9 +7,7 @@ mod data;
 mod sound;
 
 
-use std::{env, fs::File, io::Error, path::{Path, PathBuf}};
-
-use crate::data::Folder;
+use std::{env, io::Error, path:: PathBuf};
 
 
 struct CleanUp;
@@ -78,6 +76,7 @@ fn main() {
 
 fn init()->Result<(), Error>{
     terminal::enter_alternative_buffer();
+    terminal::set_title("INCIDENT");
     sound::init()?;
     data::player::init_player();
 

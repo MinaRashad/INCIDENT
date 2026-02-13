@@ -13,9 +13,6 @@ struct Sound{
     source:rodio::source::Buffered<Decoder<BufReader<File>>>
 }
 
-struct Stream{
-    output: OutputStream
-}
 
 pub enum SoundCategory{
     Space,

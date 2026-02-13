@@ -17,37 +17,6 @@ use crate::terminal;
 
 const DOCS_ROOT:&str = "assets/documents";
 
-fn get_folder_contents(path:PathBuf)  
--> Result<Vec<(bool, OsString, PathBuf)>, Error> {
-    let folder = fs::read_dir(&path)?;
-
-
-    let result: Vec<(bool, OsString, PathBuf)> = folder.map(|entry| match entry {
-                        Ok(entry)=> entry,
-                        Err(_) => panic!("Something unexpected happened")                        
-                    })
-                    .map(|entry| (entry.file_name(), entry.path()))
-                    .map(|entry| (entry.1.is_dir(), entry.0, entry.1))
-                    .into_iter()
-                    .collect();
-
-    return Ok(result);
-}
-
-fn get_formatted_options(contents:Vec<(bool, OsString, PathBuf)>)
-->Result<(Vec<(bool, OsString, PathBuf)>, Vec<String>), Error>{
-
-    let options : Vec<String> = contents
-                    .iter()
-                    .map(|entry| 
-                    format!("{entry_type}{name}", 
-                    entry_type = if entry.0 {""} else {"FILE - "},
-                    name=  entry.1.to_str().unwrap() ))
-                    .collect();
-
-    
-    Ok((contents, options))
-}
 
 pub fn start() -> GameState {
     terminal::clear_screen();
@@ -84,7 +53,10 @@ pub fn start() -> GameState {
 
     println!("\n{}\n", ready);
 
+    docs_init();
+
     menu_components::wait_for_input();
+    
 
     GameState::OpenPath(PathBuf::from(DOCS_ROOT))
 }
@@ -140,4 +112,43 @@ fn open_dir(path:PathBuf) -> GameState{
 
 fn open_file(path:PathBuf) -> GameState{
     todo!()
+}
+
+// Docs helper functions
+
+fn docs_init(){
+    // this function does any initiation needed on document side
+    terminal::set_title("INCIDENT: Documents");
+}
+
+fn get_folder_contents(path:PathBuf)  
+-> Result<Vec<(bool, OsString, PathBuf)>, Error> {
+    let folder = fs::read_dir(&path)?;
+
+
+    let result: Vec<(bool, OsString, PathBuf)> = folder.map(|entry| match entry {
+                        Ok(entry)=> entry,
+                        Err(_) => panic!("Something unexpected happened")                        
+                    })
+                    .map(|entry| (entry.file_name(), entry.path()))
+                    .map(|entry| (entry.1.is_dir(), entry.0, entry.1))
+                    .into_iter()
+                    .collect();
+
+    return Ok(result);
+}
+
+fn get_formatted_options(contents:Vec<(bool, OsString, PathBuf)>)
+->Result<(Vec<(bool, OsString, PathBuf)>, Vec<String>), Error>{
+
+    let options : Vec<String> = contents
+                    .iter()
+                    .map(|entry| 
+                    format!("{entry_type}{name}", 
+                    entry_type = if entry.0 {""} else {"FILE - "},
+                    name=  entry.1.to_str().unwrap() ))
+                    .collect();
+
+    
+    Ok((contents, options))
 }
