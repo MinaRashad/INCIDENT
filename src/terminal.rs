@@ -34,6 +34,12 @@ pub fn clear_screen(){
         .expect("Failed to flush");
 }
 
+pub fn clear_scrollback(){
+    print!("{CSI}3J{CSI}1;1H");
+    io::stdout().flush()
+        .expect("Failed to flush");
+}
+
 pub fn set_title(title:&str){
     print!("\x1B]0;{title}\x1B\\");
     io::stdout().flush()
@@ -234,6 +240,18 @@ pub fn exit_alternative_buffer(){
         .expect("Failed to flush");
 }
 
+// scrolling
+pub fn scroll_down(n:usize){
+    print!("{CSI}{n}S");
+    io::stdout().flush()
+        .expect("Failed to flush");
+}
+
+pub fn scroll_up(n:usize){
+    print!("{CSI}{n}T");
+    io::stdout().flush()
+        .expect("Failed to flush");
+}
 
 
 // random stuff

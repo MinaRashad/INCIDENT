@@ -1,6 +1,6 @@
 use std::{io::{self, Write}, thread, time::Duration};
 
-use crate::terminal;
+use crate::{menu_components, terminal};
 use crate::sound;
 
 pub fn typer(msg:&str,delay_ms:u64, sound:bool){
@@ -21,6 +21,23 @@ pub fn typer(msg:&str,delay_ms:u64, sound:bool){
     }
 
 }
+
+pub fn line_typer(msg:&str,delay_ms:u64){
+
+    let lines = msg.lines();
+    let mut curr_height: u32 = 0;
+    for line in lines{
+        print!("{line} \n");
+        match io::stdout().flush() {
+            Ok(_) => {},
+            Err(_) => panic!("Didnt flush")
+        };
+
+        thread::sleep(Duration::from_millis(delay_ms));
+    }
+
+}
+
 
 
 pub fn loading_bar(delay_ms:u64){

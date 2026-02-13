@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::thread::sleep;
 use std::time::{self};
+use crossterm::event::KeyCode;
 use rascii_art;
 
 use crate::data::{self, ImageDoc};
@@ -233,6 +234,7 @@ pub fn print_logo(){
     {
         //let img = terminal::center_multiline(img);
         terminal::move_cursor_linestart();
+        let img = terminal::center_multiline(img);
         println!("{}",img)
     }
 }
@@ -302,6 +304,23 @@ pub fn wait_for_input(){
 
     let mut buf = String::new();
     io::stdin().read_line(&mut buf).expect("An error occured");
+}
+
+pub fn wait_for_scroll(){
+    let sub = "Mouse wheel scroll. Enter to exit".to_string();
+    let sub = terminal::center(sub);
+    let sub = terminal::blink(sub);
+    println!("{}",sub);
+
+
+    loop {
+        let input: KeyCode = terminal::get_input();
+
+        match input {
+            KeyCode::Enter => break,
+            _ => {}
+        }
+    }
 }
 
 

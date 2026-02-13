@@ -79,6 +79,5 @@ fn init()->Result<(), Error>{
     terminal::set_title("INCIDENT");
     sound::init()?;
     data::player::init_player();
-
     Ok(())
 }
