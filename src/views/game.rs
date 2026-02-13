@@ -202,15 +202,17 @@ pub fn start_up()->GameState{
 pub fn main_console()->GameState{
     terminal::clear_screen();
     let selection = menu_components::multichoice(
-                        "Linked resources available",
-                        vec!["[CHAT LOGS]",
-                                "[APARTMENT FILE SYSTEM]",
-                                "[RESIDENT DIRECTORY]"], 
+                        "Main Console",
+                        vec![
+                            "Case Details",
+                            "Chatlogs",
+                            "Documents",
+                            "Witnesses",
+                            "Suspects"], 
                         true);
     
     match selection {
-        0 => windows::start_mode("chat"),
-        1 => windows::start_mode("docs"),
+        2 => windows::start_mode("docs"),
         _ => todo!("not here yet")
     }
     

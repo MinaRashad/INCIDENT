@@ -7,7 +7,9 @@ mod data;
 mod sound;
 
 
-use std::{env, io::Error};
+use std::{env, fs::File, io::Error, path::{Path, PathBuf}};
+
+use crate::data::Folder;
 
 
 struct CleanUp;
@@ -27,6 +29,7 @@ enum GameState{
     MainConsole,
     Chats,
     Docs,
+    OpenPath(PathBuf),
     Exit
 }
 
@@ -41,6 +44,7 @@ impl GameState {
                     GameState::Chats => views::chat::start(),
                     GameState::Docs => views::docs::start(),
                     GameState::Exit => std::process::exit(0),
+                    GameState::OpenPath(path) => views::docs::open_path(path)
                 }
     }
 }

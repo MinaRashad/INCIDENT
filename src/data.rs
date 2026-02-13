@@ -33,8 +33,8 @@ pub struct Password{
 }
 
 pub enum TextDoc {
-    TextDoc,
-    EncryptedDoc(Password)
+    TextDoc(String),
+    EncryptedDoc(String,Password)
 }
 
 pub enum ImageDoc{
