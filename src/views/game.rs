@@ -2,7 +2,6 @@ use crate::terminal;
 use crate::menu_components;
 use crate::GameState;
 use crate::animate;
-use crate::windows;
 use crate::sound;
 
 use std::thread;

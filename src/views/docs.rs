@@ -1,9 +1,7 @@
-use core::error;
 use std::collections;
 use std::ffi::OsString;
 use std::io::Error;
 use std::io::Read;
-use std::path::Path;
 use std::path::PathBuf;
 use std::fs;
 
@@ -13,8 +11,6 @@ use std::time::Duration;
 
 use crate::animate;
 use crate::data;
-use crate::data::Folder;
-use crate::data::docs;
 use crate::menu_components;
 use crate::GameState;
 use crate::terminal;

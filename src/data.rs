@@ -27,7 +27,7 @@ pub struct ChatLog{
 
 // Documents
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 pub struct Password{
     content:String
 }

@@ -1,6 +1,6 @@
 use std::{io::{self, Write}, thread, time::Duration};
 
-use crate::{menu_components, terminal};
+use crate::terminal;
 use crate::sound;
 
 pub fn typer(msg:&str,delay_ms:u64, sound:bool){
@@ -25,7 +25,7 @@ pub fn typer(msg:&str,delay_ms:u64, sound:bool){
 pub fn line_typer(msg:&str,delay_ms:u64){
 
     let lines = msg.lines();
-    let mut curr_height: u32 = 0;
+    let curr_height: u32 = 0;
     for line in lines{
         print!("{line} \n");
         match io::stdout().flush() {
