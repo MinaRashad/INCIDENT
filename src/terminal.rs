@@ -82,10 +82,14 @@ pub fn blink(text:String) -> String{
 pub fn center(text:String)->String{
     let [w, _] = size();
     let stripped = strip(&text);
-    let text_len = stripped.len();
+    let text_len = String::from_utf8(stripped);
+    let text_len = match text_len {
+        Ok(s) => s.chars().count(),
+        Err(_) => panic!("This should never happen")
+    };
 
     if text_len >= w {
-        panic!("The text is too long to be centered")
+        panic!("The text is too long to be centered :{text}, {w}")
     }
 
     // to center a text we need the following
