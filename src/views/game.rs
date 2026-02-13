@@ -201,20 +201,12 @@ pub fn start_up()->GameState{
 
 pub fn main_console()->GameState{
     terminal::clear_screen();
-    let selection = menu_components::multichoice(
+    
+    menu_components::multichoice(
                         "Main Console",
                         vec![
-                            "Case Details",
-                            "Chatlogs",
-                            "Documents",
-                            "Witnesses",
-                            "Suspects"], 
-                        true);
-    
-    match selection {
-        2 => windows::start_mode("docs"),
-        n => todo!("not here yet {n}")
-    }
-    
-    GameState::MainConsole
+                            GameState::NewWindow("chat".to_string()),
+                            GameState::NewWindow("docs".to_string()),
+                            GameState::Exit], 
+                        true)
 }

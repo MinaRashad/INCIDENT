@@ -99,32 +99,23 @@ fn open_dir(path:PathBuf) -> GameState{
     let title = path.to_str()
                         .and_then(|path| path.strip_prefix("assets"))
                         .unwrap_or("Documents");
-    let options_str = options
+    let options_str: Vec<GameState> = contents
                          .iter()
-                         .map(|option| option.as_str())
+                         .map(|option| GameState::OpenPath(PathBuf::from(&option.2)))
                          .chain(
                             [if path != PathBuf::from(DOCS_ROOT) 
-                                 {"Back"} 
-                            else {"Exit"}]
+                                 {GameState::GoBack(
+                                    PathBuf::from(path.parent()
+                                    .and_then(|p|p.to_str())
+                                    .unwrap_or(DOCS_ROOT)
+                                        )
+                                 )} 
+                            else {GameState::Exit}]
                         )
                          .collect();
     
 
-    let selection = menu_components::multichoice(title, options_str, true);
-
-    match selection {
-        i if i < options.len() => {GameState::OpenPath(
-            contents[i].2.clone()
-        )},
-        _ => match path {
-            p if p == PathBuf::from(DOCS_ROOT) => GameState::Exit,
-            p => GameState::OpenPath(
-                p.as_path().parent()
-                .and_then(|p| Some(p.to_path_buf()))
-                .unwrap_or(PathBuf::from(DOCS_ROOT))
-            )
-        }
-    }
+    menu_components::multichoice(title, options_str, true)
 }
 
 fn open_file(path:PathBuf) -> GameState{
@@ -205,7 +196,6 @@ fn get_formatted_options(contents:Vec<(bool, OsString, PathBuf)>)
                     name=  entry.1.to_str().unwrap() ))
                     .collect();
 
-    
     Ok((contents, options))
 }
 
@@ -240,7 +230,7 @@ fn embed_images_in(file_content:&String)->Option<String>{
 
     let [w, h] = terminal::size();
     let w= w as u32;
-    let image_width = (w / 2).min(64);
+    let image_width = (w / 2).max(5);
     let image_height = image_width/2;
 
     let lines :Vec<&str> = file_content.lines().collect();

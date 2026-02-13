@@ -109,12 +109,18 @@ fn unhighlight_option(option:String,
 }
 
 
-pub fn multichoice(title:&str, options:Vec<&str>,
-                    centered:bool)-> usize{
+pub fn multichoice(title:&str, options:Vec<GameState>,
+                    centered:bool)-> GameState{
 
+    
     terminal::hide_cursor();
     // handle unexpected cases
     if options.is_empty() {panic!("There are no options")};
+
+    let options_str: Vec<String> = options.iter()
+                .map(|state| state.as_name())
+                .collect();
+
     // print the title
     let title = if centered {terminal::center(title.to_string())} 
                         else{title.to_string()};
@@ -127,13 +133,13 @@ pub fn multichoice(title:&str, options:Vec<&str>,
     println!("{}",title);
     println!("{}", help);
 
-    let options =
-        options.iter().map(
+    let options_str =
+        options_str.iter().map(
                 |s| s.to_string()
             )
             .collect();
 
-    let options = display_options(options, centered);
+    let options_str = display_options(options_str, centered);
     
 
     let mut curr_selection :usize= 0;
@@ -143,8 +149,8 @@ pub fn multichoice(title:&str, options:Vec<&str>,
     let mut now = time::SystemTime::now();
 
     loop{
-        highlight_option(options[curr_selection].to_string(),
-                        options.len(),
+        highlight_option(options_str[curr_selection].to_string(),
+                        options_str.len(),
                         curr_selection,
                         centered);
 
@@ -158,8 +164,8 @@ pub fn multichoice(title:&str, options:Vec<&str>,
         
         if input.is_down() || input.is_up(){
 
-            unhighlight_option(options[curr_selection].to_string(),
-                        options.len(),
+            unhighlight_option(options_str[curr_selection].to_string(),
+                        options_str.len(),
                         curr_selection,
                         centered);
 
@@ -180,9 +186,7 @@ pub fn multichoice(title:&str, options:Vec<&str>,
     }
 
     terminal::show_cursor();
-    curr_selection
-
-
+    options[curr_selection].clone()
 }
 
 

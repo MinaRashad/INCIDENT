@@ -17,7 +17,7 @@ impl Drop for CleanUp {
         terminal::exit_alternative_buffer();
     }
 }
-
+#[derive(Clone)]
 enum GameState{
     TitleScreen,
     MainMenu,
@@ -28,7 +28,31 @@ enum GameState{
     Chats,
     Docs,
     OpenPath(PathBuf),
+    GoBack(PathBuf),
+    NewWindow(String),
     Exit
+}
+
+impl GameState {
+    fn as_name(&self) -> String{
+        match &self {
+            GameState::Chats => "Chat Log".to_string(),
+            GameState::Docs => "Documents".to_string(),
+            GameState::MainConsole => "Main Console".to_string(),
+            GameState::OpenPath(path) => path.file_name()
+                                        .and_then(|f| f.to_str())
+                                        .and_then(|s| Some(s.to_string()))
+                                        .unwrap_or("UNKNOWN FILE".to_string())
+                                    ,
+            GameState::GoBack(path) => "Back".to_string(),
+            GameState::Exit => "Exit".to_string(),
+            GameState::Options => "Options".to_string(),
+            GameState::Startup => "Boot".to_string(),
+            GameState::TitleScreen => "Title screen".to_string(),
+            GameState::MainMenu => "Main Menu".to_string(),
+            GameState::NewWindow(name) => format!("Open {name}", name=name.to_uppercase())
+        }
+    }
 }
 
 impl GameState {
@@ -42,14 +66,19 @@ impl GameState {
                     GameState::Chats => views::chat::start(),
                     GameState::Docs => views::docs::start(),
                     GameState::Exit => std::process::exit(0),
-                    GameState::OpenPath(path) => views::docs::open_path(path)
+                    GameState::OpenPath(path) => views::docs::open_path(path),
+                    GameState::GoBack(path) => views::docs::open_path(path),
+                    GameState::NewWindow(name) => {
+                        windows::start_mode(name.as_str());
+                        GameState::MainConsole
+                    }
                 }
     }
 }
 
 fn main() {
     let _guard = CleanUp;
-    let mut game_state = GameState::TitleScreen;
+    let mut game_state = GameState::MainConsole;// GameState::TitleScreen;
 
     let args :Vec<String>= env::args().collect();
     println!("{args:?}");

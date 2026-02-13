@@ -41,20 +41,16 @@ pub fn main_menu()->GameState{
     println!("{}",title());
 
 
-    let selection = menu_components::multichoice(
+    menu_components::multichoice(
         "Main Menu", 
-        vec!["Start", "Options", "Exit"],
+        vec![
+            GameState::Startup,
+            GameState::Options,
+            GameState::Exit
+        ],
         true
-        );
-    
-    if selection == 0{
-        return GameState::Startup;
-    }else if selection == 1 {
-        return GameState::Options;
-    } else{
-        return GameState::Exit;
-    }
-   
+        )
+
 }
 
 
