@@ -1,7 +1,9 @@
 use core::error;
+use std::collections;
 use std::ffi::OsString;
 use std::io::Error;
 use std::io::Read;
+use std::path::Path;
 use std::path::PathBuf;
 use std::fs;
 
@@ -10,6 +12,7 @@ use std::time::Duration;
 
 
 use crate::animate;
+use crate::data;
 use crate::data::Folder;
 use crate::data::docs;
 use crate::menu_components;
@@ -99,7 +102,11 @@ fn open_dir(path:PathBuf) -> GameState{
     let options_str = options
                          .iter()
                          .map(|option| option.as_str())
-                         .chain(["Back"])
+                         .chain(
+                            [if path != PathBuf::from(DOCS_ROOT) 
+                                 {"Back"} 
+                            else {"Exit"}]
+                        )
                          .collect();
     
 
@@ -144,6 +151,11 @@ fn open_file(path:PathBuf) -> GameState{
     }
     
     let file_content = header_str + file_content.as_str();
+
+    let file_content = match embed_images_in(&file_content) {
+        Some(text)=>text,
+        None=> file_content
+    };
 
     terminal::clear_scrollback();
 
@@ -221,4 +233,65 @@ fn header(file_name:String)->String{
     let result = terminal::center_multiline(result);
 
     result
+}
+
+fn embed_images_in(file_content:&String)->Option<String>{
+    let mut result = String::new();
+
+    let [w, h] = terminal::size();
+    let w= w as u32;
+    let image_width = (w / 2).min(64);
+    let image_height = image_width/2;
+
+    let lines :Vec<&str> = file_content.lines().collect();
+    let mut image_queue = collections::VecDeque::new();
+
+    let mut i = 0;
+    while i < lines.len(){
+        let line = lines[i];
+        if line.starts_with("<img>") {
+            image_queue.push_back(line);
+        }
+
+        if !image_queue.is_empty() {
+            let img_path = image_queue.pop_front()?;
+            // replace the tag with the ascii art
+            let img_path = img_path.strip_prefix("<img>")?;
+            let img_path = img_path.strip_suffix("</img>")?;
+            let img_path = PathBuf::from(img_path);
+            let image = data::ImageDoc::Image(img_path);
+            let image = menu_components::display_image(image, 
+                Some(image_width),
+                Some(image_height))?;
+            let image:Vec<&str> = image.lines().collect();
+
+            // now we have the image string
+            // we just need to advance until we either
+            // run out of extra text or exceed the image
+            let mut j = 0;
+            let mut image_str = String::new();
+            while j < image.len() && i < lines.len(){
+                i += 1;
+                if lines[i].starts_with("<img>"){
+                    image_queue.push_back(line);
+                    continue;
+                }
+                image_str += image[j];
+                image_str += "  "; // just add space between
+                image_str += lines[i];
+                image_str += "\n";
+                j += 1
+            }
+            result += image_str.as_str();
+        }
+        else{
+            result += line;
+        }
+        result += "\n";
+
+        i += 1;
+
+    }
+
+    return Some(result)
 }

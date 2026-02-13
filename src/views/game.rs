@@ -213,7 +213,7 @@ pub fn main_console()->GameState{
     
     match selection {
         2 => windows::start_mode("docs"),
-        _ => todo!("not here yet")
+        n => todo!("not here yet {n}")
     }
     
     GameState::MainConsole

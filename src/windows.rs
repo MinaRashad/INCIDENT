@@ -1,5 +1,6 @@
 use std::io::{Stdin, Stdout};
 use std::env;
+use std::os::windows::process::CommandExt;
 // This module is to manage multiple
 // windows. Nothing related to the windows
 // operating system specifically
@@ -37,6 +38,7 @@ pub fn start_mode(name:&str){
         "cmd" =>{
             std::process::Command::new("cmd")
             .args(["/C", "start", "cmd", "/K", &exe_path, &format!("--{name}")])
+            .creation_flags(0x00000008) // Detached mode
             .spawn()
         },
         "osascript" =>{
