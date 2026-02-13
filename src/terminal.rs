@@ -16,6 +16,7 @@ use strip_ansi_escapes::strip;
 pub const CSI :&str="\x1B[";
 
 // terminal utility
+// functions that control the terminal pattern
 pub fn size() -> [usize;2]
 {
     let size: Option<(Width, Height)> = terminal_size();
@@ -45,8 +46,18 @@ pub fn set_title(title:&str){
     io::stdout().flush()
         .expect("Failed to flush");
 }
+pub fn enable_text_warp(){
+    print!("{CSI}?7h");
+    io::stdout().flush()
+        .expect("Failed to flush");
 
+}
+pub fn disable_text_warp(){
+    print!("{CSI}?7l");
+    io::stdout().flush()
+        .expect("Failed to flush");
 
+}
 
 /* Text variations
    each function takes string and outputs a string

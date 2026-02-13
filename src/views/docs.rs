@@ -25,6 +25,7 @@ const DOCS_ROOT:&str = "assets/documents";
 
 pub fn start() -> GameState {
     terminal::exit_alternative_buffer();
+    terminal::disable_text_warp();
     terminal::clear_screen();
     terminal::clear_scrollback();
 
