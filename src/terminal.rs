@@ -4,7 +4,6 @@ use std::time::Duration;
 use crossterm::event::{Event, KeyCode, poll, read};
 use strip_ansi_escapes::strip;
 
-
 /*
     Terminal module
     Here will be only Terminal utilities

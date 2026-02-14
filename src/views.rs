@@ -35,22 +35,53 @@ pub fn title_page()->GameState{
     GameState::MainMenu
 }
 
-pub fn main_menu()->GameState{
+pub fn main_menu() -> GameState {
     terminal::clear_screen();
+    terminal::hide_cursor();
 
-    println!("{}",title());
+    // GRUB uses blue background
+    let blue_bg = [0, 0, 128];
+    let white_fg = [255, 255, 255];
+    let light_gray = [200, 200, 200];
 
+    // Create full-width colored header
+    let [width, _] = terminal::size();
+    let padding = " ".repeat(width);
+    
+    // GRUB header with background
+    let header_line = terminal::background_color(
+        terminal::foreground_color(padding.clone(), white_fg),
+        blue_bg
+    );
+    
+    let title_text = format!("{:^width$}", "GNU GRUB  version 2.06", width = width);
+    let grub_title = terminal::background_color(
+        terminal::foreground_color(title_text, white_fg),
+        blue_bg
+    );
 
-    menu_components::multichoice(
-        "Main Menu", 
+    println!("{}", header_line);
+    println!("{}", grub_title);
+    println!("{}", header_line);
+    println!();
+
+    // Get the selection
+    let choice = menu_components::multichoice(
+        "",
         vec![
             GameState::Startup,
             GameState::Options,
             GameState::Exit
         ],
         true
-        )
+    );
 
+    println!();
+    println!();
+    
+
+    terminal::show_cursor();
+    choice
 }
 
 

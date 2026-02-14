@@ -44,7 +44,7 @@ pub fn init()-> Result<(), Error>{
     let stream_handle = rodio::OutputStreamBuilder::open_default_stream()
         .expect("open default audio stream");
 
-    let _ = match STREAM.set(stream_handle) {
+    match STREAM.set(stream_handle) {
         Ok(_)=>{},
         Err(_)=>panic!("Failed to get a handle for stream")
     };
@@ -109,7 +109,7 @@ fn stream_and_sound(sound:SoundCategory)->Option<(&'static OutputStream, &'stati
     let idx = rand::rng().random_range(0..sounds.len());
     let stream = STREAM.get()?;
 
-    return Some((stream, &sounds[idx]));
+    Some((stream, &sounds[idx]))
 }
 
 pub fn play(sound:SoundCategory)->Option<Duration>{

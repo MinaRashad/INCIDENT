@@ -9,7 +9,7 @@ use rascii_art;
 use crate::data::{self, ImageDoc};
 use crate::terminal;
 use crate::sound;
-use crate::GameState;
+use crate::game_state::GameState;
 
 pub fn check_password(real_password:&str, 
         from:GameState, to:GameState)->GameState{
@@ -311,7 +311,7 @@ pub fn wait_for_input(){
 }
 
 pub fn wait_for_scroll(){
-    let sub = "Mouse wheel scroll. Enter to exit".to_string();
+    let sub = "Use Mouse wheel to scroll. Enter to exit".to_string();
     let sub = terminal::center(sub);
     let sub = terminal::blink(sub);
     println!("{}",sub);

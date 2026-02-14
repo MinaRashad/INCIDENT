@@ -37,7 +37,7 @@ pub fn start_mode(name:&str){
     let _ = match TERMINAL {
         "cmd" =>{
             std::process::Command::new("cmd")
-            .args(["/C", "start", "cmd", "/K", &exe_path, &format!("--{name}")])
+            .args(["/C", "start", "cmd", "/K", exe_path, &format!("--{name}")])
             .creation_flags(0x00000008) // Detached mode
             .spawn()
         },
@@ -51,7 +51,7 @@ pub fn start_mode(name:&str){
         },
         "gnome-terminal" =>{
             std::process::Command::new("gnome-terminal")
-            .args(["--", &exe_path, &format!("--{name}")])
+            .args(["--", exe_path, &format!("--{name}")])
             .spawn()
         },
         &_ =>{unimplemented!("not supported")}
