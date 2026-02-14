@@ -2,7 +2,7 @@ use std::collections;
 use std::ffi::OsString;
 use std::io::Error;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{PathBuf,Path};
 use std::fs;
 
 use std::thread::sleep;
@@ -14,18 +14,14 @@ use crate::data;
 use crate::menu_components;
 use crate::GameState;
 use crate::terminal;
+use crate::views;
+use crate::views::chat;
 
 
 const DOCS_ROOT:&str = "assets/documents";
 
 
 pub fn start() -> GameState {
-    terminal::exit_alternative_buffer();
-    terminal::disable_text_warp();
-    terminal::clear_screen();
-    terminal::clear_scrollback();
-
-
 
     let header = terminal::bold(
         terminal::foreground_color(
@@ -88,8 +84,8 @@ fn open_dir(path:PathBuf) -> GameState{
         Err(_)=>panic!("Unable to retireve root docs contents")
     };
 
-    let (contents, options) = match get_formatted_options(contents) {
-        Ok((c,o))=> (c,o),
+    let contents = match get_options(contents) {
+        Ok(v)=> v,
         Err(_)=> panic!("Failed to format options")
     };
 
@@ -98,7 +94,7 @@ fn open_dir(path:PathBuf) -> GameState{
                         .unwrap_or("Documents");
     let options_str: Vec<GameState> = contents
                          .iter()
-                         .map(|option| GameState::OpenPath(PathBuf::from(&option.2)))
+                         .map(|option| GameState::OpenPath(option.to_path_buf()))
                          .chain(
                             [if path != PathBuf::from(DOCS_ROOT) 
                                  {GameState::GoBack(
@@ -138,7 +134,7 @@ fn open_file(path:PathBuf) -> GameState{
         file_content += "THIS FILE DOES NOT EXIST"
     }
     
-    let file_content = header_str + file_content.as_str();
+    let file_content = file_content;
 
     let file_content = match embed_images_in(&file_content) {
         Some(text)=>text,
@@ -147,7 +143,30 @@ fn open_file(path:PathBuf) -> GameState{
 
     terminal::clear_scrollback();
 
-    animate::line_typer(&file_content, 50);
+    if file_content.starts_with("[CHAT]"){
+        let mut lines = file_content.lines();
+        let line = lines.next();
+        let line = match line {
+            Some(line)=>line,
+            None => panic!("How come we cant get the first line")
+        };
+        let split = line.split("][");
+        let split : Vec<&str> = split.into_iter().collect();
+        let sender = split[1];
+        let reciever = split[2];
+        let reciever = match reciever.strip_suffix(']') {
+            Some(r)=> r,
+            None => reciever
+        };
+
+        chat::parse_and_display_chat(&file_content, (sender, reciever));
+    }
+    else{
+        let file_content = header_str + file_content.as_str();
+        animate::line_typer(&file_content, 50);
+    }
+
+
 
     menu_components::wait_for_scroll();
     
@@ -163,6 +182,10 @@ fn docs_init(){
     // this function does any initiation needed on document side
     terminal::set_title("INCIDENT: Documents");
     // so I dont have to implement my own scroll feature
+    terminal::exit_alternative_buffer();
+    terminal::disable_text_warp();
+    terminal::clear_screen();
+    terminal::clear_scrollback();
 }
 
 fn get_folder_contents(path:PathBuf)  
@@ -182,23 +205,20 @@ fn get_folder_contents(path:PathBuf)
     return Ok(result);
 }
 
-fn get_formatted_options(contents:Vec<(bool, OsString, PathBuf)>)
-->Result<(Vec<(bool, OsString, PathBuf)>, Vec<String>), Error>{
+fn get_options(contents:Vec<(bool, OsString, PathBuf)>)
+->Result<Vec<PathBuf>, Error>{
 
-    let options : Vec<String> = contents
+    let options : Vec<PathBuf> = contents
                     .iter()
-                    .map(|entry| 
-                    format!("{entry_type}{name}", 
-                    entry_type = if entry.0 {""} else {"FILE - "},
-                    name=  entry.1.to_str().unwrap() ))
+                    .map(|entry| entry.2.clone())
                     .collect();
 
-    Ok((contents, options))
+    Ok(options)
 }
 
 
 // file functions
-fn name(path:&PathBuf)->Result<String, OsString>{
+fn name(path:&Path)->Result<String, OsString>{
     let file_name = path.file_name();
     let file_name = match file_name {
         Some(name)=>name,
@@ -217,12 +237,10 @@ fn header(file_name:String)->String{
     result += file_name.as_str();
     result += "\n════════════════════════════════════════════════════════════\n";
 
-    let result = terminal::center_multiline(result);
-
-    result
+    terminal::center_multiline(result)
 }
 
-fn embed_images_in(file_content:&String)->Option<String>{
+fn embed_images_in(file_content:&str)->Option<String>{
     let mut result = String::new();
 
     let [w, h] = terminal::size();
@@ -280,5 +298,6 @@ fn embed_images_in(file_content:&String)->Option<String>{
 
     }
 
-    return Some(result)
+    Some(result)
 }
+

@@ -27,11 +27,7 @@ pub fn line_typer(msg:&str,delay_ms:u64){
     let lines = msg.lines();
     let curr_height: u32 = 0;
     for line in lines{
-        print!("{line} \n");
-        match io::stdout().flush() {
-            Ok(_) => {},
-            Err(_) => panic!("Didnt flush")
-        };
+        println!("{line}");
 
         thread::sleep(Duration::from_millis(delay_ms));
     }
