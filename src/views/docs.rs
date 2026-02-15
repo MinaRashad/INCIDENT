@@ -14,7 +14,7 @@ use toml::Value;
 use crate::animate;
 use crate::data;
 use crate::data::docs::metadata;
-use crate::data::docs::{Metadata, MetadataField, Entry};
+use crate::data::{Metadata, MetadataField, Entry};
 use crate::data::docs::update_metadata;
 use crate::menu_components;
 use crate::game_state::GameState;
@@ -118,9 +118,15 @@ fn open_dir(path:PathBuf) -> GameState{
 
 fn path_gamestate(path:&PathBuf)->GameState{
     
-    let entry = data::docs::Entry{path: path.to_path_buf()};
-    if let Some(metadata) = metadata(&entry){
-        println!("{metadata:#?}");
+    let entry = data::Entry{path: path.to_path_buf()};
+    if let Some(metadata) = data::docs::metadata(&entry) &&
+       let Some(player_access) = data::player::get_access_level() &&
+       let Some(required_access) = metadata.access_level{
+        if player_access < required_access as i32 {
+            return GameState::Unauthorized(path.to_path_buf());
+        }
+        
+    
     };
     
     GameState::OpenPath(path.to_path_buf())
@@ -206,9 +212,7 @@ fn docs_init(){
     terminal::disable_text_warp();
     terminal::clear_screen();
     terminal::clear_scrollback();
-
-    // read documents metadata and store it
-    data::docs::init_metadata();
+    
 }
 
 fn get_folder_contents(path:PathBuf)  

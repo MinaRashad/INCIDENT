@@ -9,9 +9,6 @@ use crate::terminal;
 
 
 pub fn start()->GameState{    
-    let user = player::get_player();
-    println!("Hello {user:?}");
-
 
     menu_components::wait_for_input();
 

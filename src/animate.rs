@@ -68,3 +68,17 @@ pub fn loading_bar(delay_ms:u64){
     terminal::move_cursor_linestart();
 
 }
+
+pub fn flash(content:String, delay_ms:u64, count:usize){
+
+    for i in 0..count{
+        terminal::clear_screen();
+        terminal::clear_scrollback();
+        println!("{}",content);
+        std::thread::sleep(Duration::from_millis(delay_ms));
+        
+        terminal::clear_screen();
+        terminal::clear_scrollback();
+        std::thread::sleep(Duration::from_millis(delay_ms));
+    }
+}

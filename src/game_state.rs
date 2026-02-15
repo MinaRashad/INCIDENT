@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use crate::views;
 use crate::windows;
+use crate::terminal;
 
 #[derive(Clone)]
 pub enum GameState{
@@ -40,7 +41,9 @@ impl GameState {
             GameState::MainMenu => "Main Menu".to_string(),
             GameState::NewWindow(name) => format!("Open {name}", name=name.to_uppercase()),
 
-            GameState::Unauthorized(_)=> todo!("Need to work on that")
+            GameState::Unauthorized(path)=> terminal::faint(
+                                GameState::OpenPath(path.to_path_buf())
+                                                                .as_name())
         }
     }
 }
@@ -62,7 +65,7 @@ impl GameState {
                         windows::start_mode(name.as_str());
                         GameState::MainConsole
                     },
-                    GameState::Unauthorized(_)=> todo!()
+                    GameState::Unauthorized(path)=> views::unauthorized_access(path)
                 }
     }
 }

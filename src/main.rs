@@ -50,6 +50,7 @@ fn init()->Result<(), Error>{
     terminal::enter_alternative_buffer();
     terminal::set_title("INCIDENT");
     sound::init()?;
+    data::init_db();
     data::player::init_player();
     Ok(())
 }

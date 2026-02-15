@@ -1,5 +1,6 @@
 
 use crate::terminal;
+use crate::animate;
 use crate::menu_components;
 use crate::GameState;
 
@@ -7,7 +8,7 @@ pub mod chat;
 pub mod docs;
 pub mod game;
 
-
+use std::path::PathBuf;
 
 // main menu
 // just the title screen, and input block
@@ -112,24 +113,82 @@ pub fn print_greeting(color1:[u8;3], bgcolor1:[u8;3],
 }
 
 
-pub fn unauthorized(state: GameState) -> GameState{
-    let path = match state {
-        GameState::Unauthorized(path) => path,
-        _ => panic!("The game state must be unauthorized")
-    };
-
-    let msg = terminal::figlet_figure("UNAUTHORIZED".to_string());
-    let msg = terminal::center_multiline(msg);
-    println!("{msg}");
-    menu_components::wait_for_input();
-
-    let path = path.parent()
-                .map(|p| p.to_path_buf())
-                .map(|p| GameState::OpenPath(p));
+pub fn unauthorized_access(path: PathBuf) -> GameState {
+    terminal::clear_screen();
+    terminal::hide_cursor();
     
-    match path {
-        Some(state)=> state,
-        None => GameState::Docs        
-    }
-
+    let previous_path = path.parent()
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| PathBuf::from(docs::DOCS_ROOT));
+    
+    let warning = terminal::figlet_figure("ACCESS".to_string());
+    let denied = terminal::figlet_figure("DENIED".to_string());
+    
+    let red = [255, 50, 50];
+    let dark_red = [150, 0, 0];
+    
+    // Create flash content
+    let colored_warning = terminal::foreground_color(
+        terminal::bold(warning.clone()),
+        red
+    );
+    let colored_denied = terminal::foreground_color(
+        terminal::bold(denied.clone()),
+        red
+    );
+    
+    let flash_content = format!("\n\n{}{}", 
+        terminal::center_multiline(colored_warning),
+        terminal::center_multiline(colored_denied)
+    );
+    
+    // Flash effect
+    animate::flash(flash_content, 150, 3);
+    
+    // Final display
+    terminal::clear_screen();
+    let colored_warning = terminal::foreground_color(
+        terminal::bold(warning),
+        red
+    );
+    let colored_denied = terminal::foreground_color(
+        terminal::bold(denied),
+        dark_red
+    );
+    
+    print!("{}", terminal::center_multiline(colored_warning));
+    print!("{}", terminal::center_multiline(colored_denied));
+    
+    println!();
+    println!();
+    
+    let filename = path.file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or("UNKNOWN");
+    
+    let error_msg = format!("⚠ RESTRICTED FILE: {}", filename);
+    let error_colored = terminal::foreground_color(
+        terminal::bold(error_msg),
+        [255, 200, 0]
+    );
+    println!("{}", terminal::center(error_colored));
+    
+    println!();
+    let prompt = "[ INSUFFICIENT CLEARANCE LEVEL ]";
+    let prompt_colored = terminal::foreground_color(
+        terminal::invert(prompt.to_string()),
+        red
+    );
+    println!("{}", terminal::center(prompt_colored));
+    
+    println!();
+    println!();
+    
+    let instruction = terminal::faint("Press any key to return...".to_string());
+    println!("{}", terminal::center(instruction));
+    
+    terminal::get_input();
+    terminal::show_cursor();
+    
+    GameState::GoBack(previous_path)
 }

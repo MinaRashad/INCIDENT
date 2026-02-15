@@ -17,3 +17,19 @@ CREATE TABLE IF NOT EXISTS metadata_tags (
     FOREIGN KEY (path) REFERENCES metadata(path) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS player (
+    id INTEGER PRIMARY KEY CHECK (id = 0), -- Ensure only one row exists
+    name TEXT NOT NULL,
+    access_level INTEGER NOT NULL
+);
+
+
+-- INSERT INTO metadata (path, access_level)
+-- VALUES ('/example/path', 2);
+
+INSERT INTO metadata (path, access_level)
+VALUES ('assets/documents/Case details', 1);
+
+INSERT INTO metadata (path, access_level)
+VALUES ("assets/documents/Victim's Computer", 1);

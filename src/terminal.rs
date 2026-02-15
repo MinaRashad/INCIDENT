@@ -88,6 +88,10 @@ pub fn invert(text:String) -> String{
     format!("{CSI}7m{text}{CSI}0m")
 }
 
+pub fn faint(text:String) -> String{
+    format!("{CSI}2m{text}{CSI}0m")
+}
+
 // animation
 pub fn blink(text:String) -> String{
     format!("{CSI}5m{text}{CSI}0m")
