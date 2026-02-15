@@ -3,26 +3,48 @@ use crate::views;
 use crate::windows;
 use crate::terminal;
 
+/// Represents all possible states/screens in the game
+/// Each state corresponds to a different view or action
+/// States can carry data (like file paths) needed for that view
 #[derive(Clone)]
 pub enum GameState{
+    /// Initial title/splash screen
     TitleScreen,
+    /// Main menu selection screen
     MainMenu,
+    /// Settings/configuration screen
     Options,
+    
     // main game loop
+    /// Game startup/boot sequence animation
     Startup,
+    /// Primary game console/terminal interface
     MainConsole,
+    /// Chat log viewer
     Chats,
+    /// Document browser/file explorer
     Docs,
+    /// Open and display a specific file at the given path
     OpenPath(PathBuf),
+    /// Navigate back to parent directory of the given path
     GoBack(PathBuf),
+    /// Launch a new window/application with the given name
     NewWindow(String),
+    /// Exit the game
     Exit,
 
     // information control states
-    Unauthorized(PathBuf), // Unauthorized access
+    /// Display unauthorized access screen for the given path
+    Unauthorized(PathBuf),
+    /// Prompt for password before accessing the given path
+    PasswordProtected(PathBuf)
 }
 
 impl GameState {
+    /// Returns a human-readable display name for the current state
+    /// Used for UI elements like breadcrumbs or status displays
+    /// Some states like Unauthorized use special formatting (faint text)
+    /// PasswordProtected states show an asterisk (*) suffix
     pub fn as_name(&self) -> String{
         match &self {
             GameState::Chats => "Chat Log".to_string(),
@@ -43,12 +65,19 @@ impl GameState {
 
             GameState::Unauthorized(path)=> terminal::faint(
                                 GameState::OpenPath(path.to_path_buf())
+                                                                .as_name()),
+            GameState::PasswordProtected(path) => format!("{}*", 
+                                            GameState::OpenPath(path.to_path_buf())
                                                                 .as_name())
         }
     }
 }
 
 impl GameState {
+    /// Executes the current game state and returns the next state
+    /// This is the main state machine driver - each state determines what comes next
+    /// Some states exit the program, others transition to new views
+    /// The returned GameState is then run in the main game loop
     pub fn run(self)->GameState{
         match self {
                     GameState::TitleScreen => views::title_page(),
@@ -65,9 +94,8 @@ impl GameState {
                         windows::start_mode(name.as_str());
                         GameState::MainConsole
                     },
-                    GameState::Unauthorized(path)=> views::unauthorized_access(path)
+                    GameState::Unauthorized(path)=> views::unauthorized_access(path),
+                    GameState::PasswordProtected(path) => todo!()
                 }
     }
 }
-
-

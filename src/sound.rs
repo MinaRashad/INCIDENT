@@ -6,23 +6,30 @@ use std::sync::OnceLock;
 use std::time::Duration;
 use rand::Rng;
 
-
-
-
+/// Represents a buffered audio source that can be played multiple times
+/// The source is pre-loaded into memory for instant playback
 struct Sound{
     source:rodio::source::Buffered<Decoder<BufReader<File>>>
 }
 
-
+/// Categories of sounds available in the game
+/// Each category corresponds to a folder in assets/sounds/
 pub enum SoundCategory{
+    /// Space/whitespace key sounds
     Space,
+    /// Typing/keystroke sounds
     Type,
+    /// Boot/startup sounds
     Boot,
+    /// Background music
     Music,
+    /// GUI interaction feedback sounds
     GUIFeedback,
 }
 
 impl SoundCategory {
+    /// Returns the folder name for this sound category
+    /// Used to map categories to filesystem directories
     fn name(&self)->String{
         match &self {
             SoundCategory::Space => "space".to_string(),
@@ -34,12 +41,26 @@ impl SoundCategory {
     }
 }
 
-
+/// Global storage for all loaded sounds, organized by category
+/// Each category can have multiple sound files for variety
 static SOUNDS:OnceLock<
         collections::HashMap<String, Vec<Sound>>
         > = OnceLock::new();
+
+/// Global audio output stream handle
+/// Initialized once and reused for all audio playback
 static STREAM:OnceLock<OutputStream> = OnceLock::new();
 
+/// Initializes the audio system
+/// Loads all sound files from assets/sounds/ into memory
+/// Must be called before any sound playback
+/// 
+/// Directory structure expected:
+/// assets/sounds/
+///   ├── space/
+///   ├── type/
+///   ├── boot/
+///   └── etc.
 pub fn init()-> Result<(), Error>{
     let stream_handle = rodio::OutputStreamBuilder::open_default_stream()
         .expect("open default audio stream");
@@ -100,6 +121,9 @@ pub fn init()-> Result<(), Error>{
     Ok(())
 }
 
+/// Gets a random sound from the specified category along with the output stream
+/// Returns None if sounds haven't been initialized or category doesn't exist
+/// Randomly selects one sound file from the category for variety
 fn stream_and_sound(sound:SoundCategory)->Option<(&'static OutputStream, &'static Sound)>{
     let sound_name = sound.name();
     let map = SOUNDS.get()?;
@@ -112,6 +136,9 @@ fn stream_and_sound(sound:SoundCategory)->Option<(&'static OutputStream, &'stati
     Some((stream, &sounds[idx]))
 }
 
+/// Plays a sound from the specified category once
+/// Returns the duration of the sound if successful
+/// Randomly picks one sound from the category each time
 pub fn play(sound:SoundCategory)->Option<Duration>{
 
     let (
@@ -124,7 +151,8 @@ pub fn play(sound:SoundCategory)->Option<Duration>{
     source.total_duration()
 }
 
-
+/// Plays a sound from the specified category on infinite loop
+/// Returns Some(()) if successful, None if sound system not initialized
 fn play_forever(sound:SoundCategory)->Option<()>{
     let (
         stream, 
@@ -136,7 +164,10 @@ fn play_forever(sound:SoundCategory)->Option<()>{
     Some(())
 }
 
-
+/// Plays appropriate keystroke sound based on character type
+/// Non-whitespace characters play Type sounds
+/// Whitespace characters play Space sounds
+/// Returns the duration of the played sound
 pub fn keystroke_play(c:char)->Option<Duration>{
 
     if !c.is_whitespace() {
@@ -146,6 +177,8 @@ pub fn keystroke_play(c:char)->Option<Duration>{
     }
 }
 
+/// Plays a boot/startup sound
+/// Returns the duration of the played sound
 pub fn boot_play()-> Option<Duration>{
     play(SoundCategory::Boot)
 }

@@ -31,5 +31,6 @@ CREATE TABLE IF NOT EXISTS player (
 INSERT INTO metadata (path, access_level)
 VALUES ('assets/documents/Case details', 1);
 
-INSERT INTO metadata (path, access_level)
-VALUES ("assets/documents/Victim's Computer", 1);
+INSERT INTO metadata (path, password)
+VALUES ("assets/documents/Victim's Computer", 
+"cbf642fa3e4f61fbc373f128d7ba39b8a9c8a4872f01bcf4dcf9c2526912b9f");

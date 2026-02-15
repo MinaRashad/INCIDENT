@@ -11,6 +11,7 @@ rascii_art = "0.4.5"
 rodio = "0.21.1"
 rusqlite = { version = "0.38.0", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
+sha2 = "0.10.9"
 strip-ansi-escapes = "0.2.1"
 terminal_size = "0.4.3"
 toml = "1.0.1"

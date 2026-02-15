@@ -1,4 +1,3 @@
-
 use std::thread;
 use std::time::Duration;
 
@@ -7,7 +6,11 @@ use crate::GameState;
 use crate::data::player;
 use crate::terminal;
 
-
+/// Entry point for the chat log viewer
+/// Waits for user input before returning to the Chats state
+/// 
+/// # Returns
+/// Always returns GameState::Chats
 pub fn start()->GameState{    
 
     menu_components::wait_for_input();
@@ -15,7 +18,28 @@ pub fn start()->GameState{
     GameState::Chats
 }
 
-
+/// Displays a single chat message in a bordered bubble format
+/// 
+/// # Arguments
+/// * `sender` - Name of the message sender
+/// * `timestamp` - Message timestamp string
+/// * `message` - The message content (will be word-wrapped)
+/// * `is_left` - If true, aligns bubble to left; if false, aligns to right
+/// 
+/// The bubble automatically adjusts its width based on content:
+/// - MIN_WIDTH (30 chars): Minimum bubble size
+/// - MAX_WIDTH (50 chars): Maximum bubble size
+/// - Width adapts to fit the longest content line
+/// 
+/// Format:
+/// ```
+/// ┌────────────────┐
+/// │ Nov 2, 10:23 PM│
+/// │ Sarah          │
+/// ├────────────────┤
+/// │ Hello there!   │
+/// └────────────────┘
+/// ```
 pub fn display_chat_bubble(sender: &str, timestamp: &str, message: &str, is_left: bool) {
     const MAX_WIDTH: usize = 50;  // Maximum bubble width
     const MIN_WIDTH: usize = 30;  // Minimum bubble width
@@ -66,6 +90,17 @@ pub fn display_chat_bubble(sender: &str, timestamp: &str, message: &str, is_left
     // sleep so we do not print everything at once
 }
 
+/// Wraps text to fit within a maximum width while preserving words
+/// 
+/// # Arguments
+/// * `text` - The text to wrap
+/// * `max_width` - Maximum characters per line
+/// 
+/// # Returns
+/// Vector of strings, each representing one wrapped line
+/// 
+/// Words are kept intact - if a word would exceed max_width,
+/// it starts on a new line. Splits on whitespace.
 pub fn word_wrap(text: &str, max_width: usize) -> Vec<String> {
     let mut lines = Vec::new();
     let mut current_line = String::new();
@@ -92,6 +127,21 @@ pub fn word_wrap(text: &str, max_width: usize) -> Vec<String> {
     lines
 }
 
+/// Parses and displays a complete chat conversation
+/// 
+/// # Arguments
+/// * `content` - Multi-line string containing the chat log
+/// * `participants` - Tuple of (person1, person2) names for the conversation
+/// 
+/// Expected message format per line:
+/// ```
+/// [Nov 2, 10:23 PM] Sarah: Hello there!
+/// [Nov 2, 10:24 PM] Marcus: Hi Sarah!
+/// ```
+/// 
+/// Messages from person1 align left, messages from person2 align right.
+/// Displays a centered header with participant names.
+/// Sleeps 2 seconds between messages for readability.
 pub fn parse_and_display_chat(content: &str, participants: (&str, &str)) {
     let (person1, person2) = participants; // e.g., ("Sarah", "Marcus")
     let mut header = String::new();
@@ -120,6 +170,17 @@ pub fn parse_and_display_chat(content: &str, participants: (&str, &str)) {
     }
 }
 
+/// Extracts timestamp and remaining content from a chat message line
+/// 
+/// # Arguments
+/// * `line` - A line of text starting with a bracketed timestamp
+/// 
+/// # Returns
+/// Some((timestamp, rest)) if line starts with [timestamp], None otherwise
+/// 
+/// Example:
+/// Input: "[Nov 2, 10:23 PM] Sarah: Hello"
+/// Output: Some(("Nov 2, 10:23 PM", "Sarah: Hello"))
 fn parse_message_line(line: &str) -> Option<(String, String)> {
     if line.starts_with('[') {
         if let Some(end) = line.find(']') {

@@ -1,4 +1,3 @@
-
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::thread::sleep;
@@ -11,40 +10,20 @@ use crate::terminal;
 use crate::sound;
 use crate::game_state::GameState;
 
-pub fn check_password(real_password:&str, 
-        from:GameState, to:GameState)->GameState{
-    
-    println!("Please enter your password: ");
-
-    let mut password:String = String::new();
-    let mut attempts: i32 = 2;
-
-    while attempts > 3 {
-        io::stdin()
-        .read_line(&mut password)
-        .expect("Failed");
-        if password.trim() != real_password {
-            attempts -= 1;
-            println!("{}", 
-                terminal::foreground_color(format!("incorrect password ({attempts} REMAINING)"),
-                 [200,100,100]));
-            password = String::new(); // remove current data
-        }
-        else{
-            println!("{}", 
-                terminal::foreground_color("ACCESS GRANTED".to_string(), 
-                 [100,200,100]));
-
-            return from;
-        }
-    };
-    return to;
-}
-
 
 
 // complex menus
 
+/// Displays a list of options on screen
+/// 
+/// # Arguments
+/// * `options` - Vector of option strings to display
+/// * `centered` - If true, centers each option horizontally on screen
+/// 
+/// # Returns
+/// Returns the same vector of options (for chaining or further processing)
+/// 
+/// Prints each option on a new line and flushes output to ensure immediate display
 fn display_options(options:Vec<String>, centered:bool) -> Vec<String>{
     for i in 0..options.len(){
         let option = &options[i];
@@ -61,6 +40,14 @@ fn display_options(options:Vec<String>, centered:bool) -> Vec<String>{
     options
 }
 
+/// Highlights a menu option by inverting its colors
+/// Moves cursor to the option's position, applies invert style, then returns cursor
+/// 
+/// # Arguments
+/// * `option` - The option text to highlight
+/// * `num_options` - Total number of options in the menu
+/// * `curr_selection` - Index of the option to highlight (0-based)
+/// * `centered` - Whether the option should be centered
 fn highlight_option(option:String, num_options:usize,
                     curr_selection:usize,
                     centered:bool){
@@ -85,6 +72,14 @@ fn highlight_option(option:String, num_options:usize,
         
 }
 
+/// Removes highlight from a menu option by printing it normally
+/// Moves cursor to the option's position, prints normal text, then returns cursor
+/// 
+/// # Arguments
+/// * `option` - The option text to unhighlight
+/// * `num_options` - Total number of options in the menu
+/// * `curr_selection` - Index of the option to unhighlight (0-based)
+/// * `centered` - Whether the option should be centered
 fn unhighlight_option(option:String, 
                         num_options:usize, 
                         curr_selection:usize,
@@ -108,7 +103,24 @@ fn unhighlight_option(option:String,
         
 }
 
-
+/// Displays an interactive menu with keyboard navigation
+/// User can navigate with arrow keys (↕) and select with Enter (↩)
+/// 
+/// # Arguments
+/// * `title` - Title text displayed above the menu
+/// * `options` - Vector of GameState options to choose from
+/// * `centered` - If true, centers all text horizontally
+/// 
+/// # Returns
+/// The selected GameState
+/// 
+/// # Panics
+/// Panics if options vector is empty
+/// 
+/// Controls:
+/// - Up/Down arrows: Navigate through options
+/// - Enter: Confirm selection
+/// Includes input debouncing (200ms) and audio feedback on navigation
 pub fn multichoice(title:&str, options:Vec<GameState>,
                     centered:bool)-> GameState{
 
@@ -191,6 +203,19 @@ pub fn multichoice(title:&str, options:Vec<GameState>,
 
 
 // graphical functions
+
+/// Renders an image as colored ASCII art
+/// 
+/// # Arguments
+/// * `img` - ImageDoc containing the path to the image file
+/// * `w` - Optional width constraint in characters
+/// * `h` - Optional height constraint in characters
+/// 
+/// # Returns
+/// Some(String) containing the ASCII art if successful, None if rendering fails
+/// 
+/// Uses the rascii_art library to convert images to colored block characters
+/// Respects width/height constraints if provided
 pub fn display_image(img:ImageDoc, w:Option<u32>, h:Option<u32>)-> Option<String>{
 
     let mut image_ascii = String::new();
@@ -221,6 +246,9 @@ pub fn display_image(img:ImageDoc, w:Option<u32>, h:Option<u32>)-> Option<String
     return None
 }
 
+/// Displays the OS logo as ASCII art
+/// Logo is scaled to 70% of terminal width and centered on screen
+/// Uses the OS_LOGO_PATH from the data::docs module
 pub fn print_logo(){
     let [w, h] = terminal::size();
     let w = w as u32;
@@ -240,7 +268,17 @@ pub fn print_logo(){
     }
 }
 
-// utilities used inside views
+/// Calculates the current date as [year, month, day]
+/// 
+/// # Returns
+/// Ok([year, month, day]) if successful
+/// Err if system time is before UNIX epoch
+/// 
+/// Computes the date from UNIX epoch (1970-01-01) forward
+/// Accounts for leap years following Gregorian calendar rules:
+/// - Divisible by 4: leap year
+/// - Divisible by 100: not a leap year
+/// - Divisible by 400: leap year
 pub fn date()->Result<[u64; 3],time::SystemTimeError>
 {
     
@@ -297,6 +335,9 @@ pub fn date()->Result<[u64; 3],time::SystemTimeError>
     Ok([curr_year,curr_month,days])
 }
 
+/// Displays a "Press anything to Continue..." prompt and waits for input
+/// Text is centered and blinking
+/// Waits for user to press Enter before continuing
 pub fn wait_for_input(){
     let sub = "Press anything to Continue...".to_string();
     let sub = terminal::center(sub);
@@ -307,6 +348,10 @@ pub fn wait_for_input(){
     io::stdin().read_line(&mut buf).expect("An error occured");
 }
 
+/// Displays scroll instructions and waits for Enter key
+/// Shows "Use Mouse wheel to scroll. Enter to exit" prompt
+/// Text is centered and blinking
+/// Loops until user presses Enter
 pub fn wait_for_scroll(){
     let sub = "Use Mouse wheel to scroll. Enter to exit".to_string();
     let sub = terminal::center(sub);
@@ -323,5 +368,3 @@ pub fn wait_for_scroll(){
         }
     }
 }
-
-

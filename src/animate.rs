@@ -3,6 +3,16 @@ use std::{io::{self, Write}, thread, time::Duration};
 use crate::terminal;
 use crate::sound;
 
+/// Displays text character-by-character with a typewriter effect
+/// 
+/// # Arguments
+/// * `msg` - The message to display
+/// * `delay_ms` - Delay between characters in milliseconds (used only if sound is false)
+/// * `sound` - If true, plays keystroke sounds and uses sound duration for timing
+///             If false, uses delay_ms for timing
+/// 
+/// Characters are printed one at a time with delays between them.
+/// When sound is enabled, keystroke sounds control the timing.
 pub fn typer(msg:&str,delay_ms:u64, sound:bool){
 
     for c in msg.chars(){
@@ -22,6 +32,14 @@ pub fn typer(msg:&str,delay_ms:u64, sound:bool){
 
 }
 
+/// Displays text line-by-line with delays between each line
+/// 
+/// # Arguments
+/// * `msg` - Multi-line message to display
+/// * `delay_ms` - Delay between lines in milliseconds
+/// 
+/// Each line is printed completely, then waits before printing the next line.
+/// Useful for displaying log-style or sequential text content.
 pub fn line_typer(msg:&str,delay_ms:u64){
 
     let lines = msg.lines();
@@ -35,7 +53,14 @@ pub fn line_typer(msg:&str,delay_ms:u64){
 }
 
 
-
+/// Displays an animated loading bar that fills progressively
+/// 
+/// # Arguments
+/// * `delay_ms` - Delay between animation frames in milliseconds
+/// 
+/// Creates a 15-block loading bar using Unicode block characters (▏▎▍▌▋▊▉█)
+/// Each block fills progressively from empty to full, creating a smooth animation.
+/// The cursor is manipulated to animate in-place, then returns to line start when complete.
 pub fn loading_bar(delay_ms:u64){
     let blocks = ['▏', '▎', '▍', '▌',
                              '▋', '▊', '▉', '█'];
@@ -69,6 +94,16 @@ pub fn loading_bar(delay_ms:u64){
 
 }
 
+/// Creates a flashing animation by alternating between showing and hiding content
+/// 
+/// # Arguments
+/// * `content` - The content to flash on screen
+/// * `delay_ms` - Delay for both visible and invisible states in milliseconds
+/// * `count` - Number of times to flash (complete on/off cycles)
+/// 
+/// Clears the screen, shows content, waits, clears screen again, waits.
+/// Repeats this cycle `count` times creating a flashing effect.
+/// Useful for warnings, alerts, or attention-grabbing displays.
 pub fn flash(content:String, delay_ms:u64, count:usize){
 
     for i in 0..count{

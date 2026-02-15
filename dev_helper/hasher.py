@@ -1,5 +1,7 @@
 import hashlib
 
+# This script helps create the default schema manually
+
 while True:
     password = input("Password: ")
     if not password:
