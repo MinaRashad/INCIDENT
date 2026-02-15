@@ -95,7 +95,7 @@ impl GameState {
                         GameState::MainConsole
                     },
                     GameState::Unauthorized(path)=> views::unauthorized_access(path),
-                    GameState::PasswordProtected(path) => todo!()
+                    GameState::PasswordProtected(path) => views::password_access(path)
                 }
     }
 }

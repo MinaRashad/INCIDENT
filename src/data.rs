@@ -6,7 +6,9 @@ use std::sync::OnceLock;
 use rusqlite::Connection;
 use serde::Serialize;
 use std::{ fs, path::{Path, PathBuf}};
-use sha2::{self, Digest};
+use sha2::{Sha256, Digest};
+
+use crate::{menu_components, terminal};
 
 
 /// Thread-local database connection for file metadata
@@ -161,7 +163,12 @@ pub fn init_db() {
 /// 
 /// # Returns
 /// Hexadecimal representation of the SHA-256 hash
-pub fn sha256(input:&str)->String{
-    let hasher = sha2::Sha256::new();
-    todo!()
+pub fn sha256(input:String) -> String{
+    let mut hasher = Sha256::new();
+    hasher.update(input);
+    let hash:String= hasher
+        .finalize().iter().map(|b| format!("{:02x}", b))
+        .collect();
+
+    hash
 }

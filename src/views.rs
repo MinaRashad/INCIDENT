@@ -280,9 +280,14 @@ pub fn password_access(path: PathBuf) -> GameState {
         std::io::stdin().read_line(&mut input).expect("Failed to read input");
         let input = input.trim();
         
-        let hashed = data::sha256(input);
-        
+        let hashed = data::sha256(input.to_string());
+        println!();
+        println!("Seen: {hashed}");
+        println!("Actual: {password_sha256hash}");
+        menu_components::wait_for_input();
+
         if hashed == password_sha256hash {
+            print_access_granted();
             GameState::OpenPath(path)
         } else {
             GameState::Unauthorized(path)
@@ -290,4 +295,52 @@ pub fn password_access(path: PathBuf) -> GameState {
     } else {
         panic!("SHOULD NEVER HAPPEN")
     }
+}
+
+/// Simply print a figlet art for ACCESS GRANTED
+fn print_access_granted(){
+    terminal::clear_screen();
+    
+    let granted = terminal::figlet_figure("ACCESS".to_string());
+    let granted2 = terminal::figlet_figure("GRANTED".to_string());
+    
+    let green = [50, 255, 50];
+    let dark_green = [0, 150, 0];
+    
+    // Flash green a couple times
+    let colored_granted = terminal::foreground_color(
+        terminal::bold(granted.clone()),
+        green
+    );
+    let colored_granted2 = terminal::foreground_color(
+        terminal::bold(granted2.clone()),
+        green
+    );
+    
+    let flash_content = format!("\n\n{}{}", 
+        terminal::center_multiline(colored_granted),
+        terminal::center_multiline(colored_granted2)
+    );
+    
+    animate::flash(flash_content, 100, 2);
+    
+    // Final display with darker green
+    terminal::clear_screen();
+    let final_granted = terminal::foreground_color(
+        terminal::bold(granted),
+        green
+    );
+    let final_granted2 = terminal::foreground_color(
+        terminal::bold(granted2),
+        dark_green
+    );
+    
+    print!("{}", terminal::center_multiline(final_granted));
+    print!("{}", terminal::center_multiline(final_granted2));
+    
+    println!("\n{}", terminal::center(
+        terminal::foreground_color("✓ Authentication successful".to_string(), green)
+    ));
+    
+    std::thread::sleep(std::time::Duration::from_secs(2));
 }

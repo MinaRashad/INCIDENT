@@ -120,11 +120,21 @@ fn path_gamestate(path:&PathBuf)->GameState{
     
     let entry = data::Entry{path: path.to_path_buf()};
     if let Some(metadata) = data::docs::metadata(&entry) &&
-       let Some(player_access) = data::player::get_access_level() &&
-       let Some(required_access) = metadata.access_level{
-        if player_access < required_access as i32 {
-            return GameState::Unauthorized(path.to_path_buf());
+       let Some(player_access) = data::player::get_access_level() {
+
+
+
+        if let Some(required_access) = metadata.access_level &&
+         player_access < required_access as i32 
+         {
+                return GameState::Unauthorized(path.to_path_buf());
         }
+
+        if let Some(password) = metadata.password 
+        {
+                return GameState::PasswordProtected(path.to_path_buf());
+        }
+        
         
     
     };
