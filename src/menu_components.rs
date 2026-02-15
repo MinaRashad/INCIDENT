@@ -206,10 +206,7 @@ pub fn display_image(img:ImageDoc, w:Option<u32>, h:Option<u32>)-> Option<String
         options = options.height(h);
     }
 
-    let path = match img {
-        ImageDoc::Image(path)=>path,
-        ImageDoc::EncyptedImage(path, _ ) => panic!("Cant decrypt, please only pass plain images")
-    };
+    let path = img.get_path();
 
     let path = path.to_str()?;
 
@@ -232,7 +229,7 @@ pub fn print_logo(){
     let w = (70*w)/100;
     let logo_path = data::docs::OS_LOGO_PATH;
     let logo_path = PathBuf::from(logo_path);
-    let logo = ImageDoc::Image(logo_path);
+    let logo = ImageDoc::image(logo_path);
     
     if let Some(img) = display_image(logo, Some(w), None)
     {

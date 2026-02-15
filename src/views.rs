@@ -1,3 +1,4 @@
+
 use crate::terminal;
 use crate::menu_components;
 use crate::GameState;
@@ -108,4 +109,27 @@ pub fn print_greeting(color1:[u8;3], bgcolor1:[u8;3],
     let date = terminal::background_color(date, bgcolor2);
 
     println!("{date}");
+}
+
+
+pub fn unauthorized(state: GameState) -> GameState{
+    let path = match state {
+        GameState::Unauthorized(path) => path,
+        _ => panic!("The game state must be unauthorized")
+    };
+
+    let msg = terminal::figlet_figure("UNAUTHORIZED".to_string());
+    let msg = terminal::center_multiline(msg);
+    println!("{msg}");
+    menu_components::wait_for_input();
+
+    let path = path.parent()
+                .map(|p| p.to_path_buf())
+                .map(|p| GameState::OpenPath(p));
+    
+    match path {
+        Some(state)=> state,
+        None => GameState::Docs        
+    }
+
 }

@@ -18,7 +18,7 @@ pub enum GameState{
     Exit,
 
     // information control states
-    Unauthorized(Box<GameState>)
+    Unauthorized(PathBuf), // Unauthorized access
 }
 
 impl GameState {
@@ -66,3 +66,5 @@ impl GameState {
                 }
     }
 }
+
+

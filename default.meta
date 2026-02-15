@@ -1,0 +1,11 @@
+["assets\\documents\\Case details\\Autopsy"]
+access_level = 1
+
+["assets\\documents\\Case details\\Victim Profile.txt"]
+access_level = 1
+
+["assets\\documents\\Chats"]
+access_level = 0
+
+["assets\\documents\\Victim's Computer"]
+access_level = 2

@@ -11,14 +11,16 @@ use std::time::Duration;
 
 use crate::animate;
 use crate::data;
+use crate::data::docs::Entry;
+use crate::data::docs::Metadata;
 use crate::menu_components;
-use crate::GameState;
+use crate::game_state::GameState;
 use crate::terminal;
-use crate::views;
 use crate::views::chat;
 
 
-const DOCS_ROOT:&str = "assets/documents";
+pub const DOCS_ROOT:&str = "assets/documents";
+// static DOCS_METADATA = 
 
 
 pub fn start() -> GameState {
@@ -92,9 +94,9 @@ fn open_dir(path:PathBuf) -> GameState{
     let title = path.to_str()
                         .and_then(|path| path.strip_prefix("assets"))
                         .unwrap_or("Documents");
-    let options_str: Vec<GameState> = contents
+    let options_gamestate: Vec<GameState> = contents
                          .iter()
-                         .map(|option| GameState::OpenPath(option.to_path_buf()))
+                         .map(|option| path_gamestate(option))
                          .chain(
                             [if path != PathBuf::from(DOCS_ROOT) 
                                  {GameState::GoBack(
@@ -108,7 +110,24 @@ fn open_dir(path:PathBuf) -> GameState{
                          .collect();
     
 
-    menu_components::multichoice(title, options_str, true)
+    menu_components::multichoice(title, options_gamestate, true)
+}
+
+fn path_gamestate(path:&PathBuf)->GameState{
+    let metadata = path_metadata(path);
+    GameState::OpenPath(path.to_path_buf())
+}
+fn path_metadata(path:&PathBuf)-> Option<Metadata>{
+    let metadata = data::docs::metadata().ok()?;
+
+    let entry = data::docs::Entry{path: path.to_path_buf()};
+    if let Some(metadata) = metadata.get(&entry){
+        Some(metadata.clone())
+    }else{
+        None
+    }
+
+
 }
 
 fn open_file(path:PathBuf) -> GameState{
@@ -186,6 +205,9 @@ fn docs_init(){
     terminal::disable_text_warp();
     terminal::clear_screen();
     terminal::clear_scrollback();
+
+    // read documents metadata and store it
+    data::docs::init_metadata();
 }
 
 fn get_folder_contents(path:PathBuf)  
@@ -264,7 +286,7 @@ fn embed_images_in(file_content:&str)->Option<String>{
             let img_path = img_path.strip_prefix("<img>")?;
             let img_path = img_path.strip_suffix("</img>")?;
             let img_path = PathBuf::from(img_path);
-            let image = data::ImageDoc::Image(img_path);
+            let image = data::ImageDoc::image(img_path);
             let image = menu_components::display_image(image, 
                 Some(image_width),
                 Some(image_height))?;
@@ -300,4 +322,6 @@ fn embed_images_in(file_content:&str)->Option<String>{
 
     Some(result)
 }
+
+
 

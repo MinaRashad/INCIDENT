@@ -32,29 +32,19 @@ pub struct Password{
     content:String
 }
 
-pub enum TextDoc {
-    TextDoc(String),
-    EncryptedDoc(String,Password)
-}
+pub struct ImageDoc(pub PathBuf);
 
-pub enum ImageDoc{
-    Image(PathBuf),
-    EncyptedImage(PathBuf,Password)
-}
+impl ImageDoc {
+    // If you were creating them like this before: ImageDoc::Image(path)
+    // You can keep doing that by adding a constructor:
+    pub fn image(path: PathBuf) -> Self {
+        ImageDoc(path)
+    }
 
-
-pub enum File{
-    Text(TextDoc),
-    Image(ImageDoc)
-}
-
-pub enum Entry{
-    File(File),
-    Folder(Folder)
-}
-
-
-pub struct Folder{
-    name:String,
-    children:Vec<Entry>
+    // If you were matching on them before:
+    // match doc { ImageDoc::Image(p) => ... }
+    // You can update the match to look like this:
+    pub fn get_path(&self) -> &PathBuf {
+        &self.0
+    }
 }

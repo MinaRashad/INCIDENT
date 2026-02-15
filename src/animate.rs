@@ -25,7 +25,7 @@ pub fn typer(msg:&str,delay_ms:u64, sound:bool){
 pub fn line_typer(msg:&str,delay_ms:u64){
 
     let lines = msg.lines();
-    let curr_height: u32 = 0;
+    // let curr_height: u32 = 0;
     for line in lines{
         println!("{line}");
 
