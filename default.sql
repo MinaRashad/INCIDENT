@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS metadata (
+    path TEXT PRIMARY KEY,
+    access_level INTEGER,
+    password TEXT,
+    opened INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS metadata_tags (
+    path TEXT NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (path, tag_id),
+    FOREIGN KEY (path) REFERENCES metadata(path) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);

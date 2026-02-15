@@ -9,10 +9,13 @@ use std::thread::sleep;
 use std::time::Duration;
 
 
+use toml::Value;
+
 use crate::animate;
 use crate::data;
-use crate::data::docs::Entry;
-use crate::data::docs::Metadata;
+use crate::data::docs::metadata;
+use crate::data::docs::{Metadata, MetadataField, Entry};
+use crate::data::docs::update_metadata;
 use crate::menu_components;
 use crate::game_state::GameState;
 use crate::terminal;
@@ -114,26 +117,24 @@ fn open_dir(path:PathBuf) -> GameState{
 }
 
 fn path_gamestate(path:&PathBuf)->GameState{
-    let metadata = path_metadata(path);
-    GameState::OpenPath(path.to_path_buf())
-}
-fn path_metadata(path:&PathBuf)-> Option<Metadata>{
-    let metadata = data::docs::metadata().ok()?;
-
+    
     let entry = data::docs::Entry{path: path.to_path_buf()};
-    if let Some(metadata) = metadata.get(&entry){
-        Some(metadata.clone())
-    }else{
-        None
-    }
-
-
+    if let Some(metadata) = metadata(&entry){
+        println!("{metadata:#?}");
+    };
+    
+    GameState::OpenPath(path.to_path_buf())
 }
 
 fn open_file(path:PathBuf) -> GameState{
     if !path.is_file() {
         panic!("open file called on dir")
     };
+
+    let entry = Entry{path:path.clone()};
+    
+    // open the file in the metadata
+    update_metadata(&entry, MetadataField::Opened(true));
 
     let header_str = match name(&path) {
         Ok(s) => header(s),
@@ -322,6 +323,4 @@ fn embed_images_in(file_content:&str)->Option<String>{
 
     Some(result)
 }
-
-
 
