@@ -1,6 +1,8 @@
 use crate::data;
 use crate::data::docs::metadata;
 use crate::data::sha256;
+use crate::sound;
+use crate::sound::SoundCategory;
 use crate::terminal;
 use crate::animate;
 use crate::menu_components;
@@ -105,7 +107,6 @@ pub fn main_menu() -> GameState {
     println!();
     
 
-    terminal::show_cursor();
     choice
 }
 
@@ -190,7 +191,9 @@ pub fn unauthorized_access(path: PathBuf) -> GameState {
     );
     
     // Flash effect
-    animate::flash(flash_content, 150, 3);
+    sound::play(SoundCategory::AccessDenied);
+
+    animate::flash(flash_content, 150, 3,None);
     
     // Final display
     terminal::clear_screen();
@@ -213,7 +216,7 @@ pub fn unauthorized_access(path: PathBuf) -> GameState {
         .and_then(|f| f.to_str())
         .unwrap_or("UNKNOWN");
     
-    let error_msg = format!("⚠ RESTRICTED FILE: {}", filename);
+    let error_msg = format!("⚠ RESTRICTED DATA: {}", filename);
     let error_colored = terminal::foreground_color(
         terminal::bold(error_msg),
         [255, 200, 0]
@@ -235,7 +238,6 @@ pub fn unauthorized_access(path: PathBuf) -> GameState {
     println!("{}", terminal::center(instruction));
     
     terminal::get_input();
-    terminal::show_cursor();
     
     GameState::GoBack(previous_path)
 }
@@ -277,10 +279,13 @@ pub fn password_access(path: PathBuf) -> GameState {
         print!("{}", terminal::center("→ ".to_string()));
         
         let mut input = String::new();
+        terminal::show_cursor();
         std::io::stdin().read_line(&mut input).expect("Failed to read input");
+        terminal::hide_cursor();
         let input = input.trim();
         
         let hashed = data::sha256(input.to_string());
+        // uncomment this to get the hash of a password
         println!();
         println!("Seen: {hashed}");
         println!("Actual: {password_sha256hash}");
@@ -290,7 +295,11 @@ pub fn password_access(path: PathBuf) -> GameState {
             print_access_granted();
             GameState::OpenPath(path)
         } else {
-            GameState::Unauthorized(path)
+            print_wrong_password();
+            let previous_path = path.parent()
+                    .map(|p| p.to_path_buf())
+                    .unwrap_or_else(|| PathBuf::from(docs::DOCS_ROOT));
+            GameState::GoBack(previous_path)
         }
     } else {
         panic!("SHOULD NEVER HAPPEN")
@@ -322,7 +331,7 @@ fn print_access_granted(){
         terminal::center_multiline(colored_granted2)
     );
     
-    animate::flash(flash_content, 100, 2);
+    animate::flash(flash_content, 100, 3,Some(SoundCategory::Good));
     
     // Final display with darker green
     terminal::clear_screen();
@@ -342,5 +351,81 @@ fn print_access_granted(){
         terminal::foreground_color("✓ Authentication successful".to_string(), green)
     ));
     
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    std::thread::sleep(std::time::Duration::from_secs(1));
+}
+
+/// Simply print incorrect password
+pub fn print_wrong_password() {
+    terminal::clear_screen();
+    terminal::hide_cursor();
+
+    
+
+    let warning = terminal::figlet_figure("PASSWORD".to_string());
+    let denied = terminal::figlet_figure("INCORRECT".to_string());
+
+    let red = [255, 50, 50];
+    let dark_red = [150, 0, 0];
+
+    // Create flash content
+    let colored_warning = terminal::foreground_color(
+        terminal::bold(warning.clone()),
+        red
+    );
+    let colored_denied = terminal::foreground_color(
+        terminal::bold(denied.clone()),
+        red
+    );
+
+    let flash_content = format!("\n\n{}{}",
+        terminal::center_multiline(colored_warning),
+        terminal::center_multiline(colored_denied)
+    );
+
+    // Flash effect
+    sound::play(SoundCategory::AccessDenied);
+    animate::flash(flash_content, 150, 3, None);
+
+    // Final display
+    terminal::clear_screen();
+    let colored_warning = terminal::foreground_color(
+        terminal::bold(warning),
+        red
+    );
+    let colored_denied = terminal::foreground_color(
+        terminal::bold(denied),
+        dark_red
+    );
+
+    print!("{}", terminal::center_multiline(colored_warning));
+    print!("{}", terminal::center_multiline(colored_denied));
+
+    println!();
+    println!();
+
+
+
+    let error_msg = format!("⚠ PASSWORD REJECTED");
+    let error_colored = terminal::foreground_color(
+        terminal::bold(error_msg),
+        [255, 200, 0]
+    );
+    println!("{}", terminal::center(error_colored));
+
+    println!();
+    let prompt = "[ TRY AGAIN OR RETURN ]";
+    let prompt_colored = terminal::foreground_color(
+        terminal::invert(prompt.to_string()),
+        red
+    );
+    println!("{}", terminal::center(prompt_colored));
+
+    println!();
+    println!();
+
+    let instruction = terminal::faint("Press any key to continue...".to_string());
+    println!("{}", terminal::center(instruction));
+
+    terminal::get_input();
+
 }

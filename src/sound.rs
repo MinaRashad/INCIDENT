@@ -14,6 +14,7 @@ struct Sound{
 
 /// Categories of sounds available in the game
 /// Each category corresponds to a folder in assets/sounds/
+#[derive(Debug, Clone, Copy)]
 pub enum SoundCategory{
     /// Space/whitespace key sounds
     Space,
@@ -25,6 +26,14 @@ pub enum SoundCategory{
     Music,
     /// GUI interaction feedback sounds
     GUIFeedback,
+    /// Success feedback
+    Good,
+    /// Failed feedback
+    Bad,
+    /// ACCESS GRANTED (spoken)
+    AccessGranted,
+    /// ACCESS DENIED (spoken)
+    AccessDenied
 }
 
 impl SoundCategory {
@@ -36,7 +45,11 @@ impl SoundCategory {
             SoundCategory::Type => "type".to_string(),
             SoundCategory::Boot => "boot".to_string(),
             SoundCategory::Music => "music".to_string(),
-            SoundCategory::GUIFeedback => "gui_feedback".to_string()
+            SoundCategory::GUIFeedback => "gui_feedback".to_string(),
+            SoundCategory::Good => "good".to_string(),
+            SoundCategory::Bad => "bad".to_string(),
+            SoundCategory::AccessDenied => "access_denied".to_string(),
+            SoundCategory::AccessGranted => "access_granted".to_string()
         }
     }
 }

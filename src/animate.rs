@@ -1,6 +1,6 @@
 use std::{io::{self, Write}, thread, time::Duration};
 
-use crate::terminal;
+use crate::{sound::SoundCategory, terminal};
 use crate::sound;
 
 /// Displays text character-by-character with a typewriter effect
@@ -100,16 +100,20 @@ pub fn loading_bar(delay_ms:u64){
 /// * `content` - The content to flash on screen
 /// * `delay_ms` - Delay for both visible and invisible states in milliseconds
 /// * `count` - Number of times to flash (complete on/off cycles)
+/// * `sound` - optional to indicate the sound the plays each cycle
 /// 
 /// Clears the screen, shows content, waits, clears screen again, waits.
 /// Repeats this cycle `count` times creating a flashing effect.
 /// Useful for warnings, alerts, or attention-grabbing displays.
-pub fn flash(content:String, delay_ms:u64, count:usize){
+pub fn flash(content:String, delay_ms:u64, count:usize, sound_name:Option<SoundCategory>){
 
     for i in 0..count{
         terminal::clear_screen();
         terminal::clear_scrollback();
         println!("{}",content);
+        if let Some(name) = &sound_name{
+                sound::play(name.clone());
+        }
         std::thread::sleep(Duration::from_millis(delay_ms));
         
         terminal::clear_screen();

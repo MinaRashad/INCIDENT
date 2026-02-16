@@ -197,7 +197,6 @@ pub fn multichoice(title:&str, options:Vec<GameState>,
 
     }
 
-    terminal::show_cursor();
     options[curr_selection].clone()
 }
 

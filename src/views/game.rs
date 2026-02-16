@@ -204,7 +204,6 @@ pub fn main_console()->GameState{
     menu_components::multichoice(
                         "Main Console",
                         vec![
-                            GameState::NewWindow("chat".to_string()),
                             GameState::NewWindow("docs".to_string()),
                             GameState::Exit], 
                         true)
