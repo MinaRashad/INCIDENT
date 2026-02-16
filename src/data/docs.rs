@@ -40,7 +40,7 @@ pub fn update_metadata(entry: &Entry, field: MetadataField)  {
 
     METADATA_DB.with(|db| {
         let conn = db.get().expect("Database not initialized");
-        let path = entry.path.to_string_lossy();
+        let path = entry.path.to_string_lossy().replace("\\", "/");;
         let col = field.column_name();
         let val = field.sqlite_value();
 
@@ -49,7 +49,7 @@ pub fn update_metadata(entry: &Entry, field: MetadataField)  {
              ON CONFLICT(path) DO UPDATE SET {col} = excluded.{col}"
         );
 
-        conn.execute(&sql, params![path.as_ref(), val])
+        conn.execute(&sql, params![path, val])
             .expect("Failed to update metadata");
     });
 }

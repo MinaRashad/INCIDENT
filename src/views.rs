@@ -7,6 +7,7 @@ use crate::terminal;
 use crate::animate;
 use crate::menu_components;
 use crate::GameState;
+use crate::util::parent;
 
 pub mod chat;
 pub mod docs;
@@ -165,9 +166,7 @@ pub fn unauthorized_access(path: PathBuf) -> GameState {
     terminal::clear_screen();
     terminal::hide_cursor();
     
-    let previous_path = path.parent()
-        .map(|p| p.to_path_buf())
-        .unwrap_or_else(|| PathBuf::from(docs::DOCS_ROOT));
+    let previous_path = parent(path);
     
     let warning = terminal::figlet_figure("ACCESS".to_string());
     let denied = terminal::figlet_figure("DENIED".to_string());
@@ -212,11 +211,8 @@ pub fn unauthorized_access(path: PathBuf) -> GameState {
     println!();
     println!();
     
-    let filename = path.file_name()
-        .and_then(|f| f.to_str())
-        .unwrap_or("UNKNOWN");
     
-    let error_msg = format!("⚠ RESTRICTED DATA: {}", filename);
+    let error_msg = format!("⚠ RESTRICTED DATA");
     let error_colored = terminal::foreground_color(
         terminal::bold(error_msg),
         [255, 200, 0]
@@ -296,9 +292,7 @@ pub fn password_access(path: PathBuf) -> GameState {
             GameState::OpenPath(path)
         } else {
             print_wrong_password();
-            let previous_path = path.parent()
-                    .map(|p| p.to_path_buf())
-                    .unwrap_or_else(|| PathBuf::from(docs::DOCS_ROOT));
+            let previous_path = parent(path);
             GameState::GoBack(previous_path)
         }
     } else {

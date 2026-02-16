@@ -6,6 +6,7 @@ mod windows;
 mod data;
 mod sound;
 mod game_state;
+mod util;
 
 use std::{env, io::Error};
 use game_state::GameState;

@@ -13,12 +13,14 @@ use toml::Value;
 
 use crate::animate;
 use crate::data;
+use crate::data::ImageDoc;
 use crate::data::docs::metadata;
 use crate::data::{Metadata, MetadataField, Entry};
 use crate::data::docs::update_metadata;
 use crate::menu_components;
 use crate::game_state::GameState;
 use crate::terminal;
+use crate::util::parent;
 use crate::views::chat;
 
 
@@ -71,10 +73,25 @@ pub fn start() -> GameState {
 pub fn open_path(path:PathBuf) -> GameState{
     terminal::clear_screen();
     terminal::clear_scrollback();
+
+    // update metadata
+    let entry = Entry{path:path.clone()};
+    
+    // open the file in the metadata
+    update_metadata(&entry, MetadataField::Opened(true));
+
     if path.is_dir(){
         open_dir(path)
     }else {
-        open_file(path)
+        if let Some(ext) = path.extension() &&
+           let Some(ext) = ext.to_str() &&
+           ["png", "jpg", "jpeg", "gif", "bmp", "webp"].contains(&ext)
+        {
+            open_image(path)
+        }
+        else{
+            open_file(path)
+        }
     }   
 }
 
@@ -103,10 +120,7 @@ fn open_dir(path:PathBuf) -> GameState{
                          .chain(
                             [if path != PathBuf::from(DOCS_ROOT) 
                                  {GameState::GoBack(
-                                    PathBuf::from(path.parent()
-                                    .and_then(|p|p.to_str())
-                                    .unwrap_or(DOCS_ROOT)
-                                        )
+                                    parent(path.clone())
                                  )} 
                             else {GameState::Exit}]
                         )
@@ -117,12 +131,12 @@ fn open_dir(path:PathBuf) -> GameState{
 }
 
 fn path_gamestate(path:&PathBuf)->GameState{
-    
+
     let entry = data::Entry{path: path.to_path_buf()};
     if let Some(metadata) = data::docs::metadata(&entry) &&
        let Some(player_access) = data::player::get_access_level() {
 
-
+        // println!("{:?}",metadata);
 
         if let Some(required_access) = metadata.access_level &&
          player_access < required_access as i32 
@@ -130,7 +144,8 @@ fn path_gamestate(path:&PathBuf)->GameState{
                 return GameState::Unauthorized(path.to_path_buf());
         }
 
-        if let Some(password) = metadata.password 
+        if let Some(password) = metadata.password && 
+           ! metadata.opened
         {
                 return GameState::PasswordProtected(path.to_path_buf());
         }
@@ -147,10 +162,7 @@ fn open_file(path:PathBuf) -> GameState{
         panic!("open file called on dir")
     };
 
-    let entry = Entry{path:path.clone()};
     
-    // open the file in the metadata
-    update_metadata(&entry, MetadataField::Opened(true));
 
     let header_str = match name(&path) {
         Ok(s) => header(s),
@@ -206,10 +218,35 @@ fn open_file(path:PathBuf) -> GameState{
 
     menu_components::wait_for_scroll();
     
-    GameState::OpenPath(path.as_path()
-                        .parent()
-                        .and_then(|p| Some(p.to_path_buf()))
-                        .unwrap_or(PathBuf::from(DOCS_ROOT)))
+    GameState::GoBack(parent(path))
+}
+
+fn open_image(path: PathBuf) -> GameState{
+    terminal::clear_screen();
+    terminal::clear_scrollback();
+
+    let img = ImageDoc(path.clone());
+    let [w, h] = terminal::size();    
+
+    let max_width = (w*9)/10;
+    let max_height = h;
+
+    let img = menu_components::display_image(
+        img,
+        Some(max_width as u32),
+         None);
+
+    
+         
+
+    if let Some(img) = img {        
+    
+        println!("{}",img)
+    }
+    
+    menu_components::wait_for_input();
+
+    GameState::GoBack(parent(path))
 }
 
 // Docs helper functions
