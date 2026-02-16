@@ -12,12 +12,11 @@ use crate::data::METADATA_DB;
 
 
 
-pub fn metadata(entry: &Entry) -> Option<Metadata> {
+pub fn metadata(entry: &Entry) -> Metadata {
 
     METADATA_DB.with(|db| {
         let conn = db.get().expect("Database not initialized");
         let path = entry.path.to_string_lossy().replace("\\", "/");
-
         conn.query_row(
             "SELECT access_level, password, opened
              FROM metadata
@@ -33,7 +32,7 @@ pub fn metadata(entry: &Entry) -> Option<Metadata> {
         )
         .optional()
         .expect("Failed to query metadata")
-    })
+    }).unwrap_or(Metadata::new())
 }
 
 pub fn update_metadata(entry: &Entry, field: MetadataField)  {

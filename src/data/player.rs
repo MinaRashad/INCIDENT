@@ -23,11 +23,10 @@ pub fn init_player(){
     METADATA_DB.with(|db|{
         let conn = db.get().expect("Unable to get db connection");
         conn.execute(
-            "INSERT INTO player (id, name, access_level)
-             VALUES (0, ?, 0)
+            "INSERT INTO player (id, name)
+             VALUES (0, ?)
              ON CONFLICT(id) DO UPDATE SET
-                 name=excluded.name,
-                 access_level=excluded.access_level;",
+                 name=excluded.name;",
             [user],
         )
         .expect("Failed to insert or update player");

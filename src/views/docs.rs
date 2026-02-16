@@ -22,6 +22,7 @@ use crate::game_state::GameState;
 use crate::terminal;
 use crate::util::parent;
 use crate::views::chat;
+use crate::events;
 
 
 pub const DOCS_ROOT:&str = "assets/documents";
@@ -62,10 +63,10 @@ pub fn start() -> GameState {
 
     println!("\n{}\n", ready);
 
-    docs_init();
 
     menu_components::wait_for_input();
-    
+    docs_init();
+
 
     GameState::OpenPath(PathBuf::from(DOCS_ROOT))
 }
@@ -76,9 +77,31 @@ pub fn open_path(path:PathBuf) -> GameState{
 
     // update metadata
     let entry = Entry{path:path.clone()};
+    let file_metadata = data::docs::metadata(&entry);
+
+
+    println!("{:?}",file_metadata);
+    // if the file is not opened 
+    if !file_metadata.opened {
+        // mark metadata to open
+        update_metadata(&entry, MetadataField::Opened(true));
+
+        // check and activate effects ON_OPEN
+        let map = events::ON_OPEN.get()
+                    .expect("Unable to retrieve the effect map");
+        
+        if let Some(effect) = map.get(
+                    path.file_name()
+                    .unwrap_or_default()
+                ){  
+                    effect.activate();
+                } 
+
+    };
+
+    
     
     // open the file in the metadata
-    update_metadata(&entry, MetadataField::Opened(true));
 
     if path.is_dir(){
         open_dir(path)
@@ -133,10 +156,10 @@ fn open_dir(path:PathBuf) -> GameState{
 fn path_gamestate(path:&PathBuf)->GameState{
 
     let entry = data::Entry{path: path.to_path_buf()};
-    if let Some(metadata) = data::docs::metadata(&entry) &&
-       let Some(player_access) = data::player::get_access_level() {
+    let metadata = data::docs::metadata(&entry);
 
-        // println!("{:?}",metadata);
+    if let Some(player_access) = data::player::get_access_level() {
+
 
         if let Some(required_access) = metadata.access_level &&
          player_access < required_access as i32 

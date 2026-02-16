@@ -7,6 +7,7 @@ mod data;
 mod sound;
 mod game_state;
 mod util;
+mod events;
 
 use std::{env, io::Error};
 use game_state::GameState;
@@ -53,5 +54,6 @@ fn init()->Result<(), Error>{
     sound::init()?;
     data::init_db();
     data::player::init_player();
+    events::init_events();
     Ok(())
 }

@@ -256,9 +256,8 @@ pub fn unauthorized_access(path: PathBuf) -> GameState {
 /// Compares SHA-256 hash of input against stored hash
 pub fn password_access(path: PathBuf) -> GameState {
     let entry = Entry { path: path.clone() };
-    
-    if let Some(data) = metadata(&entry) &&
-       let Some(password_sha256hash) = data.password {
+     let data = metadata(&entry);
+    if let Some(password_sha256hash) = data.password {
         
         terminal::clear_screen();
         println!("\n");
