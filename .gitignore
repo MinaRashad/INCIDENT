@@ -1,2 +1,5 @@
 /target
+/assets
+/dev_helper
+
 main.db
