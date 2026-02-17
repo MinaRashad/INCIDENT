@@ -1,25 +1,160 @@
 use std::thread;
 use std::time::Duration;
 
+use crossterm::event::Event;
+use crossterm::event::KeyCode;
+use crossterm::event::poll;
+use crossterm::event::read;
+
+use ratatui::Frame;
+use ratatui::layout::Constraint;
+use ratatui::layout::Direction;
+use ratatui::layout::Layout;
+use ratatui::layout::Rect;
+use ratatui::style::Style;
+use ratatui::style::Stylize;
+use ratatui::widgets::Block;
+use ratatui::widgets::Borders;
+use ratatui::widgets::List;
+use ratatui::widgets::ListItem;
+use ratatui::widgets::ListState;
+use ratatui::widgets::Paragraph;
+use ratatui::widgets::BorderType;
+
+
+
 use crate::menu_components;
 use crate::GameState;
 use crate::data::player;
+use crate::sound;
 use crate::terminal;
+
+use crate::data;
+use crate::data::chat::{ChatAppState, NPC, ChatLog, Message};
 
 /// Entry point for the chat log viewer
 /// Waits for user input before returning to the Chats state
 /// 
 /// # Returns
 /// Always returns GameState::Chats
-pub fn start()->GameState{    
+pub fn start()->GameState{
 
-    menu_components::wait_for_input();
+    let mut terminal = ratatui::init();
+    
+    let mut chatApp_state: ChatAppState = ChatAppState::default();
+    chatApp_state.current_selection.select(Some(0));
+    loop {
+        // render chat
+        terminal.draw(|f| render_chat(f, &mut chatApp_state))
+            .expect("failed to draw a frame");
 
-    GameState::Chats
+        // input
+        if poll(Duration::from_millis(500)).is_ok(){
+            // input goes here
+            match read() {
+                Ok(Event::Key(k))
+                if k.is_release() => 
+                {
+                    sound::play(sound::SoundCategory::GUIFeedback);
+                    match k.code {
+                    KeyCode::Esc => break,
+                    KeyCode::Down => {
+                        sound::play(sound::SoundCategory::GUIFeedback);
+                        chatApp_state.current_selection.select_next();
+                    },
+                    KeyCode::Up => {
+                        sound::play(sound::SoundCategory::GUIFeedback);
+                        chatApp_state.current_selection.select_previous();
+                    },
+                    _ => {}
+                }}
+                _ => {} // do nothing if anything else including error
+            };
+        }
+
+
+    }
+
+    ratatui::restore();
+    GameState::Exit
 }
 
-/// Displays a single chat message in a bordered bubble format
+fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
+
+    let frame_area = frame.area();
+
+    let general_layout = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints(
+                        [
+                            Constraint::Length(5), // header
+                            Constraint::Fill(1), // app content
+                            Constraint::Length(1) // help
+                        ]
+                    ).split(frame_area);
+    
+    let app_layout = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints(
+                        [
+                            Constraint::Percentage(39), // Chats
+                            Constraint::Fill(1) // chat area
+                        ]
+                    ).split(general_layout[1]);
+
+    let header = Paragraph::new("Whats'agram")
+                .centered()
+                .block(
+                    Block::default().border_type(BorderType::Double)
+                    .borders(Borders::ALL)
+                );
+
+
+
+    let current_chat = Block::bordered();
+    
+
+    let help = Paragraph::new("[ESC] close  [↑↓] navigate  [ENTER] open")
+                .centered().reversed();
+
+    
+    frame.render_widget(header, general_layout[0]);
+    frame.render_widget(help, general_layout[2]);
+    frame.render_widget(current_chat, app_layout[1]);
+
+    render_chatlogs(frame, 
+        app_layout[0],
+         chat_app_state);
+}
+
+fn render_chatlogs(frame: &mut Frame, chatlog_area:Rect,
+     chatlog_state:&mut ChatAppState){
+    
+    let items: Vec<ListItem> = NPC::ALL.iter()
+                    .map(|npc| format!("👤 {:?}", npc))
+                    .map(|npc_name| 
+                        ListItem::new(npc_name)
+                        
+                    )
+                    .collect();
+    let list = List::new(items)
+    .block(Block::bordered().title("Chats"))
+    .highlight_style(Style::new().reversed());
+
+    frame.render_stateful_widget(list, chatlog_area, &mut chatlog_state.current_selection);
+}
+
+
+
+
+
+
+// Static historical chats functions
+// not for dynamic use
+/// Displays a single *static* chat message in a bordered bubble format
 /// 
+/// Do not use for dynamic chats
+///
 /// # Arguments
 /// * `sender` - Name of the message sender
 /// * `timestamp` - Message timestamp string
@@ -128,7 +263,7 @@ pub fn word_wrap(text: &str, max_width: usize) -> Vec<String> {
 }
 
 /// Parses and displays a complete chat conversation
-/// 
+/// Do not use for dynamic chats
 /// # Arguments
 /// * `content` - Multi-line string containing the chat log
 /// * `participants` - Tuple of (person1, person2) names for the conversation

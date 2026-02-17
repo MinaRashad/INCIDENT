@@ -60,7 +60,7 @@ pub fn multichoice( title: &str, options: Vec<GameState>, centered: bool) -> Gam
         panic!("Failed to enable raw mode");
     }
     
-    std::thread::sleep(Duration::from_millis(300));
+    std::thread::sleep(Duration::from_millis(100));
     crate::terminal::drain_input();
 
     let title = title.replace("\\", "/");
@@ -73,8 +73,7 @@ pub fn multichoice( title: &str, options: Vec<GameState>, centered: bool) -> Gam
     let mut selection_state = ListState::default();
     selection_state.select(Some(0));
 
-    let input_buffer = Duration::from_millis(200);
-    let mut last_input = Instant::now();
+
 
     loop {
         // Rendering
@@ -93,17 +92,14 @@ pub fn multichoice( title: &str, options: Vec<GameState>, centered: bool) -> Gam
             _ => continue,
         };
 
-        if key.code == KeyCode::Enter {
+        if ! key.is_release(){
+            continue;
+        }
+
+        if key.code == KeyCode::Enter  {
             break;
         }
-
-        if key.code != KeyCode::Up && key.code != KeyCode::Down {
-            continue;
-        }
-
-        if last_input.elapsed() < input_buffer {
-            continue;
-        }
+        
 
         let current = match selection_state.selected() {
             Some(i) => i,
@@ -119,7 +115,6 @@ pub fn multichoice( title: &str, options: Vec<GameState>, centered: bool) -> Gam
         };
 
         selection_state.select(Some(next));
-        last_input = Instant::now();
         sound::play(sound::SoundCategory::GUIFeedback);
     }
 

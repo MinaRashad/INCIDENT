@@ -34,8 +34,10 @@ fn main() {
 
 
     if args.len() > 1 {
-        if args[1] == "--docs" {
-            state = GameState::Docs
+        state = match &args[1] {
+            p if p == "--docs" => GameState::Docs,
+            p if p == "--chats" => GameState::Chats,
+            _ => GameState::MainConsole
         }
     }
     

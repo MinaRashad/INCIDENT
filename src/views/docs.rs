@@ -444,7 +444,7 @@ pub fn document_view(msg:&str,delay_ms:u64) -> Option<()> {
         if poll(Duration::from_millis(delay_ms)).unwrap_or(false)
         {
             if let Event::Key(k) = read().ok()?{
-                if KeyCode::is_esc(&k.code) {
+                if KeyCode::is_enter(&k.code) && k.is_release() {
                     break Some(());
                 }
                 // scrolling feature

@@ -4,6 +4,7 @@ use ratatui::widgets::List;
 use ratatui::widgets::ListItem;
 use ansi_to_tui::IntoText;
 
+use crate::data;
 use crate::views;
 use crate::windows;
 use crate::terminal;
@@ -25,24 +26,28 @@ pub enum GameState{
     Startup,
     /// Primary game console/terminal interface
     MainConsole,
-    /// Chat log viewer
-    Chats,
+
+    /// Launch a new window/application with the given name
+    NewWindow(String),
+    /// Exit the game
+    Exit,
+
+    // Document states
+    // information control states
     /// Document browser/file explorer
     Docs,
     /// Open and display a specific file at the given path
     OpenPath(PathBuf),
     /// Navigate back to parent directory of the given path
     GoBack(PathBuf),
-    /// Launch a new window/application with the given name
-    NewWindow(String),
-    /// Exit the game
-    Exit,
-
-    // information control states
     /// Display unauthorized access screen for the given path
     Unauthorized(PathBuf),
     /// Prompt for password before accessing the given path
-    PasswordProtected(PathBuf)
+    PasswordProtected(PathBuf),
+
+    // Chat states
+    /// Chat log viewer
+    Chats,
 }
 
 impl GameState {
@@ -73,7 +78,8 @@ impl GameState {
                                                                 .as_name()),
             GameState::PasswordProtected(path) => format!("{}*", 
                                             GameState::OpenPath(path.to_path_buf())
-                                                                .as_name())
+                                                                .as_name()),
+
         }
     }
     pub fn as_listitem(&self) -> ListItem<'static> {
@@ -105,7 +111,8 @@ impl GameState {
                         GameState::MainConsole
                     },
                     GameState::Unauthorized(path)=> views::unauthorized_access(path),
-                    GameState::PasswordProtected(path) => views::password_access(path)
+                    GameState::PasswordProtected(path) => views::password_access(path),
+                    
                 }
     }
 }
