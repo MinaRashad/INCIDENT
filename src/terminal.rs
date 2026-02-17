@@ -154,7 +154,7 @@ pub fn center(text:String)->String{
     // in ANSI we will set the cursor position to
     // first column then
     
-    format!("{CSI}{space}G{text}")
+    format!("{}{}", " ".repeat(space), text)
 }
 
 /// Centers multiple lines of text, each line centered independently
@@ -190,11 +190,7 @@ pub fn get_input_now() -> KeyCode {
         expect("Failed to enter raw mode");
 
     // drain all queued inputs
-    while poll(Duration::from_millis(0))
-         .is_ok_and(|x| x) 
-    {
-        let _ = read();
-    }
+    
     
     if poll(Duration::from_millis(50))
         .is_ok_and(|x| x) 
@@ -225,10 +221,7 @@ pub fn get_input() -> KeyCode{
     let mut input = KeyCode::Null;
 
     // drain all queued inputs
-    while poll(Duration::from_millis(0))
-         .is_ok_and(|x| x)  {
-        let _ = read();
-    }
+    drain_input();
 
     match read() {
                 Ok(Event::Key(event))=>{
@@ -239,6 +232,13 @@ pub fn get_input() -> KeyCode{
             }
 
     input
+}
+pub fn drain_input() {
+    while poll(Duration::from_millis(0))
+         .is_ok_and(|x| x) 
+    {
+        let _ = read();
+    }
 }
 
 // cursor

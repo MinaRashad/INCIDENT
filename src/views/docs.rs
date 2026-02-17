@@ -8,6 +8,17 @@ use std::fs;
 use std::thread::sleep;
 use std::time::Duration;
 
+use ansi_to_tui::IntoText;
+
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+};
+use crossterm::{
+    event::{self, Event, KeyCode, poll, read},
+    terminal::{enable_raw_mode, disable_raw_mode},
+};
+
 
 use toml::Value;
 
@@ -79,8 +90,6 @@ pub fn open_path(path:PathBuf) -> GameState{
     let entry = Entry{path:path.clone()};
     let file_metadata = data::docs::metadata(&entry);
 
-
-    println!("{:?}",file_metadata);
     // if the file is not opened 
     if !file_metadata.opened {
         // mark metadata to open
@@ -234,12 +243,8 @@ fn open_file(path:PathBuf) -> GameState{
     }
     else{
         let file_content = header_str + file_content.as_str();
-        animate::line_typer(&file_content, 50);
+        document_view(&file_content, 100);
     }
-
-
-
-    menu_components::wait_for_scroll();
     
     GameState::GoBack(parent(path))
 }
@@ -398,3 +403,65 @@ fn embed_images_in(file_content:&str)->Option<String>{
     Some(result)
 }
 
+/// Function to show the document
+pub fn document_view(msg:&str,delay_ms:u64) -> Option<()> {
+    let lines:Vec<&str> = msg.lines().collect();
+    // let curr_height: u32 = 0;
+    let mut terminal = ratatui::init();
+    let mut start: usize = 0;
+    loop{
+        // render
+        terminal.draw(|frame| {
+            let area = frame.area();
+            let layout = Layout::default()
+                .direction(layout::Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Fill(1),
+                        Constraint::Length(1)
+                    ]
+                )
+                .split(area);
+            let height: usize = area.height as usize;
+            
+
+
+            let help_text = Paragraph::new("Press enter to exit. Use ↑/↓ to scroll")
+                        .centered().add_modifier(Modifier::REVERSED);
+            
+            let content = lines.iter().skip(start).take(height)
+                                .map(|line|
+                                     (*line).into_text().unwrap_or_default())
+                                .fold(Text::from(""),
+                                |acc, curr| acc + curr);
+            
+            frame.render_widget(content, layout[0]);
+            frame.render_widget(help_text, layout[1]);
+        })
+        .expect("Failed to render");
+
+        //input
+        if poll(Duration::from_millis(delay_ms)).unwrap_or(false)
+        {
+            if let Event::Key(k) = read().ok()?{
+                if KeyCode::is_esc(&k.code) {
+                    break Some(());
+                }
+                // scrolling feature
+                else if  KeyCode::is_up(&k.code){
+                    if start > 0{
+                        start = start - 1;
+                    }
+                } else if KeyCode::is_down(&k.code) {
+                    if start < lines.len(){
+                        start = start + 1
+                    }
+                }
+            };
+        }
+        
+    }
+
+
+
+}

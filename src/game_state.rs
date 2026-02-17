@@ -1,4 +1,9 @@
 use std::path::PathBuf;
+use ratatui::style::Style;
+use ratatui::widgets::List;
+use ratatui::widgets::ListItem;
+use ansi_to_tui::IntoText;
+
 use crate::views;
 use crate::windows;
 use crate::terminal;
@@ -70,6 +75,11 @@ impl GameState {
                                             GameState::OpenPath(path.to_path_buf())
                                                                 .as_name())
         }
+    }
+    pub fn as_listitem(&self) -> ListItem<'static> {
+        ListItem::new(self.as_name()
+                            .into_text()
+                            .unwrap_or_default())
     }
 }
 

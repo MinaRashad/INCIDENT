@@ -148,9 +148,12 @@ pub fn parse_and_display_chat(content: &str, participants: (&str, &str)) {
     header += "\n┌─────────────────────────────────────┐\n";
     header +="│ TEXT MESSAGE LOG                    │\n";
     header += format!("│ {} ↔ {} │\n", person1, person2).as_str();
-    header +="└─────────────────────────────────────┘";
+    header +="└─────────────────────────────────────┘\n";
+    header += "Hold ESC to display all at once";
     let header = terminal::center_multiline(header);
     println!("{}",header);
+
+    let mut wait = true;
     
     for line in content.lines() {
         let line = line.trim();
@@ -163,11 +166,17 @@ pub fn parse_and_display_chat(content: &str, participants: (&str, &str)) {
             if let Some((sender, message)) = rest.split_once(": ") {
                 let is_left = sender.trim() == person1;
                 display_chat_bubble(sender.trim(), &timestamp, message.trim(), is_left);
+                if wait {thread::sleep(Duration::from_secs(2))};
             }
         }
 
-        thread::sleep(Duration::from_secs(2));
+        let key = terminal::get_input_now();
+        if key.is_esc() {
+            wait = false
+        }
     }
+
+    menu_components::wait_for_scroll();
 }
 
 /// Extracts timestamp and remaining content from a chat message line

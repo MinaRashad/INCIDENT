@@ -1,9 +1,22 @@
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::thread::sleep;
-use std::time::{self};
-use crossterm::event::KeyCode;
+use std::time::{self, Duration, Instant};
+
 use rascii_art;
+
+use ansi_to_tui::IntoText;
+
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+};
+use crossterm::{
+    event::{self, Event, KeyCode, poll, read},
+    terminal::{enable_raw_mode, disable_raw_mode},
+};
+
+
 
 use crate::data::{self, ImageDoc};
 use crate::terminal;
@@ -12,96 +25,9 @@ use crate::game_state::GameState;
 
 
 
-// complex menus
+// complex components
 
-/// Displays a list of options on screen
-/// 
-/// # Arguments
-/// * `options` - Vector of option strings to display
-/// * `centered` - If true, centers each option horizontally on screen
-/// 
-/// # Returns
-/// Returns the same vector of options (for chaining or further processing)
-/// 
-/// Prints each option on a new line and flushes output to ensure immediate display
-fn display_options(options:Vec<String>, centered:bool) -> Vec<String>{
-    for i in 0..options.len(){
-        let option = &options[i];
-        let option = option.to_string();
-        let option = if centered{terminal::center(option)} 
-                     else {option};
-        println!("{option}");
-    }
 
-    // flush everything
-    io::stdout().flush()
-            .expect("Failed to flush");
-
-    options
-}
-
-/// Highlights a menu option by inverting its colors
-/// Moves cursor to the option's position, applies invert style, then returns cursor
-/// 
-/// # Arguments
-/// * `option` - The option text to highlight
-/// * `num_options` - Total number of options in the menu
-/// * `curr_selection` - Index of the option to highlight (0-based)
-/// * `centered` - Whether the option should be centered
-fn highlight_option(option:String, num_options:usize,
-                    curr_selection:usize,
-                    centered:bool){
-        // move cursor up option.len - curr_selection
-        terminal::move_cursor_up(num_options - curr_selection);
-        terminal::move_cursor_linestart();
-
-        //center first
-        let option = if centered{terminal::center(option)} 
-                             else {option};
-
-        // first we need to print the inverted text at the current selection
-        let selection = terminal::invert(option);
-        print!("{}",selection);
-
-        // flush the output:
-        io::stdout().flush()
-            .expect("Failed to flush");
-        
-        // move cursor down curr_selection 
-        terminal::move_cursor_down( num_options - curr_selection);
-        
-}
-
-/// Removes highlight from a menu option by printing it normally
-/// Moves cursor to the option's position, prints normal text, then returns cursor
-/// 
-/// # Arguments
-/// * `option` - The option text to unhighlight
-/// * `num_options` - Total number of options in the menu
-/// * `curr_selection` - Index of the option to unhighlight (0-based)
-/// * `centered` - Whether the option should be centered
-fn unhighlight_option(option:String, 
-                        num_options:usize, 
-                        curr_selection:usize,
-                        centered:bool){
-        // move cursor up option.len - curr_selection
-        terminal::move_cursor_up(num_options - curr_selection);
-        terminal::move_cursor_linestart();
-
-        //center first
-        let option = if centered{terminal::center(option)} 
-                             else {option};
-        
-        print!("{}",&option);
-
-        // flush the output:
-        io::stdout().flush()
-            .expect("Failed to flush");
-        
-        // move cursor down curr_selection 
-        terminal::move_cursor_down( num_options - curr_selection);
-        
-}
 
 /// Displays an interactive menu with keyboard navigation
 /// User can navigate with arrow keys (↕) and select with Enter (↩)
@@ -121,83 +47,123 @@ fn unhighlight_option(option:String,
 /// - Up/Down arrows: Navigate through options
 /// - Enter: Confirm selection
 /// Includes input debouncing (200ms) and audio feedback on navigation
-pub fn multichoice(title:&str, options:Vec<GameState>,
-                    centered:bool)-> GameState{
 
+
+
+
+pub fn multichoice( title: &str, options: Vec<GameState>, centered: bool) -> GameState {
+    if options.is_empty() {
+        panic!("There are no options");
+    }
+
+    if enable_raw_mode().is_err() {
+        panic!("Failed to enable raw mode");
+    }
     
-    terminal::hide_cursor();
-    // handle unexpected cases
-    if options.is_empty() {panic!("There are no options")};
+    std::thread::sleep(Duration::from_millis(300));
+    crate::terminal::drain_input();
 
-    let options_str: Vec<String> = options.iter()
-                .map(|state| state.as_name())
-                .collect();
+    let title = title.replace("\\", "/");
+    let backend = CrosstermBackend::new(io::stdout());
+    let mut terminal = match ratatui::Terminal::new(backend) {
+        Ok(t) => t,
+        Err(_) => panic!("Failed to create terminal"),
+    };
 
-    // print the title
-    let title = if centered {terminal::center(title.to_string())} 
-                        else{title.to_string()};
-    let title = terminal::bold(title);
-    let help = "Select your choice (Use ↕ and ↩)".to_string();
-    let help = if centered{ terminal::center(help)}
-                       else{help};
-    let help = terminal::blink(help);
-    
-    println!("{}",title);
-    println!("{}", help);
+    let mut selection_state = ListState::default();
+    selection_state.select(Some(0));
 
-    let options_str =
-        options_str.iter().map(
-                |s| s.to_string()
-            )
-            .collect();
+    let input_buffer = Duration::from_millis(200);
+    let mut last_input = Instant::now();
 
-    let options_str = display_options(options_str, centered);
-    
+    loop {
+        // Rendering
+        terminal.draw(|f| 
+            multichoice_render(f, title.clone(),
+             &options, 
+             centered,
+             &mut selection_state
+                    ) 
+        )
+        .expect("Unable to draw the frame");
 
-    let mut curr_selection :usize= 0;
+        //input handling
+        let key = match event::read() {
+            Ok(Event::Key(k)) => k,
+            _ => continue,
+        };
 
-    // input buffer
-    let input_buffer = time::Duration::from_millis(200);
-    let mut now = time::SystemTime::now();
-
-    loop{
-        highlight_option(options_str[curr_selection].to_string(),
-                        options_str.len(),
-                        curr_selection,
-                        centered);
-
-        let elapsed = now.elapsed().expect("Getting elapsed time failed");
-        if elapsed < input_buffer {
-            sleep(input_buffer - elapsed);
-        }
-
-        // now we can wait for an input
-        let input = terminal::get_input();
-        
-        if input.is_down() || input.is_up(){
-
-            unhighlight_option(options_str[curr_selection].to_string(),
-                        options_str.len(),
-                        curr_selection,
-                        centered);
-
-            now = time::SystemTime::now();
-
-            sound::play(sound::SoundCategory::GUIFeedback);
-
-        }
-        if input.is_down() {
-            curr_selection = (curr_selection + 1) % options.len();
-        } else if input.is_up() {
-            curr_selection =  if curr_selection == 0 {curr_selection + options.len()} else {curr_selection};
-            curr_selection -= 1;
-        } else if input.is_enter() {
+        if key.code == KeyCode::Enter {
             break;
         }
 
+        if key.code != KeyCode::Up && key.code != KeyCode::Down {
+            continue;
+        }
+
+        if last_input.elapsed() < input_buffer {
+            continue;
+        }
+
+        let current = match selection_state.selected() {
+            Some(i) => i,
+            None => continue,
+        };
+
+        let next = if key.code == KeyCode::Down {
+            (current + 1) % options.len()
+        } else if current == 0 {
+            options.len() - 1
+        } else {
+            current - 1
+        };
+
+        selection_state.select(Some(next));
+        last_input = Instant::now();
+        sound::play(sound::SoundCategory::GUIFeedback);
     }
 
-    options[curr_selection].clone()
+    let _ = disable_raw_mode();
+
+    options[selection_state.selected().unwrap_or(0)].clone()
+}
+
+fn multichoice_render(frame: &mut Frame, title:String, 
+    options: &Vec<GameState>, centered: bool, 
+    selection_state:&mut ListState){
+    // This finds the exact size of the terminal at each frame
+    // This is much better than the previous approach
+    let size = frame.area();
+
+    let layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Length(2),
+            Constraint::Min(0),
+        ])
+        .split(size);
+
+    let title_widget = Paragraph::new(title.as_str())
+        .alignment(if centered { Alignment::Center } else { Alignment::Left })
+        .style(Style::default().add_modifier(Modifier::BOLD));
+
+    let help_widget = Paragraph::new("Select your choice (Use ↑/↓ and Enter)")
+        .alignment(if centered { Alignment::Center } else { Alignment::Left });
+
+    let items: Vec<ListItem> = options
+        .iter()
+        .map(|o| o.as_listitem())
+        .collect();
+
+    let list = List::new(items)
+        .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+        .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+        .highlight_symbol(">> ");
+
+    frame.render_widget(title_widget, layout[0]);
+    frame.render_widget(help_widget, layout[1]);
+    frame.render_stateful_widget(list, layout[2], &mut selection_state.clone());
 }
 
 
@@ -367,3 +333,5 @@ pub fn wait_for_scroll(){
         }
     }
 }
+
+
