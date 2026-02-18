@@ -377,7 +377,8 @@ fn embed_images_in(file_content:&str)->Option<String>{
             // run out of extra text or exceed the image
             let mut j = 0;
             let mut image_str = String::new();
-            while j < image.len() && i < lines.len(){
+            while j < image.len() && i < lines.len()-1{
+                println!("=>{j},{i}, {len}", len=lines.len());
                 i += 1;
                 if lines[i].starts_with("<img>"){
                     image_queue.push_back(line);
@@ -389,6 +390,13 @@ fn embed_images_in(file_content:&str)->Option<String>{
                 image_str += "\n";
                 j += 1
             }
+            // after embedding the lines, if the image is not done yet,
+            // add the rest of the lines
+            while j < image.len() {
+                image_str += image[j];
+                image_str += "\n";
+                j += 1;
+            };
             result += image_str.as_str();
         }
         else{
