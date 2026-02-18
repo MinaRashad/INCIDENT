@@ -1,6 +1,5 @@
 use crate::data;
 use crate::data::docs::metadata;
-use crate::data::sha256;
 use crate::sound;
 use crate::sound::SoundCategory;
 use crate::terminal;
@@ -70,7 +69,6 @@ pub fn main_menu() -> GameState {
     // GRUB uses blue background
     let blue_bg = [0, 0, 128];
     let white_fg = [255, 255, 255];
-    let light_gray = [200, 200, 200];
 
     // Create full-width colored header
     let [width, _] = terminal::size();
@@ -111,41 +109,6 @@ pub fn main_menu() -> GameState {
     choice
 }
 
-
-/// Displays a welcome greeting with username and current date
-/// 
-/// # Arguments
-/// * `color1` - Text color for the username greeting
-/// * `bgcolor1` - Background color for the username greeting
-/// * `color2` - Text color for the date
-/// * `bgcolor2` - Background color for the date
-/// 
-/// Shows:
-/// - "Welcome back, [username]" (currently hardcoded to "admin")
-/// - Current system date in YYYY-MM-DD format
-/// Both lines are centered and colored according to the provided RGB values
-pub fn print_greeting(color1:[u8;3], bgcolor1:[u8;3], 
-                                 color2:[u8;3], bgcolor2:[u8;3])
-{
-    terminal::clear_screen();
-    let user_name = "admin";
-    let greeting = "Welcome back, ".to_string() + user_name;
-
-    let greeting = terminal::center(greeting);
-    let greeting = terminal::foreground_color(greeting.to_string(), color1);
-    let greeting = terminal::background_color(greeting, bgcolor1);
-
-    println!("{greeting}");
-
-    let date = menu_components::date()
-                            .expect("getting a valid date");
-    let date = format!("{0}-{1}-{2}",date[0], date[1],date[2]);
-    let date = terminal::center(date);
-    let date = terminal::foreground_color(date, color2);
-    let date = terminal::background_color(date, bgcolor2);
-
-    println!("{date}");
-}
 
 /// Displays an "ACCESS DENIED" screen for unauthorized file access attempts
 /// 

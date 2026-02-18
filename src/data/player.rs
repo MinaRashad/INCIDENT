@@ -1,5 +1,4 @@
 
-use std::sync::OnceLock;
 use whoami;
 
 use crate::data::METADATA_DB;

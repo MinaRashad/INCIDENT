@@ -12,21 +12,16 @@ use ansi_to_tui::IntoText;
 
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    widgets::Paragraph,
 };
 use crossterm::{
-    event::{self, Event, KeyCode, poll, read},
-    terminal::{enable_raw_mode, disable_raw_mode},
+    event::{Event, KeyCode, poll, read},
 };
 
 
-use toml::Value;
-
-use crate::animate;
 use crate::data;
 use crate::data::ImageDoc;
-use crate::data::docs::metadata;
-use crate::data::{Metadata, MetadataField, Entry};
+use crate::data::{MetadataField, Entry};
 use crate::data::docs::update_metadata;
 use crate::events::EventType;
 use crate::menu_components;
@@ -176,7 +171,7 @@ fn path_gamestate(path:&PathBuf)->GameState{
                 return GameState::Unauthorized(path.to_path_buf());
         }
 
-        if let Some(password) = metadata.password && 
+        if let Some(_password) = metadata.password && 
            ! metadata.opened
         {
                 return GameState::PasswordProtected(path.to_path_buf());
@@ -201,7 +196,6 @@ fn open_file(path:PathBuf) -> GameState{
         Err(_) => panic!("Unable to create the header")
     };
 
-    let [w, h] = terminal::size();
 
     let mut file_content = String::new();
     let _ = fs::File::open(&path)
@@ -254,10 +248,9 @@ fn open_image(path: PathBuf) -> GameState{
     terminal::clear_scrollback();
 
     let img = ImageDoc(path.clone());
-    let [w, h] = terminal::size();    
+    let [w, _h] = terminal::size();    
 
     let max_width = (w*9)/10;
-    let max_height = h;
 
     let img = menu_components::display_image(
         img,
@@ -265,14 +258,11 @@ fn open_image(path: PathBuf) -> GameState{
          None);
 
     
-         
-
-    if let Some(img) = img {        
+    match img {
+        Some(img) => {document_view(img.as_str(), 50);},
+        None => {}    
+    };
     
-        println!("{}",img)
-    }
-    
-    menu_components::wait_for_input();
 
     GameState::GoBack(parent(path))
 }

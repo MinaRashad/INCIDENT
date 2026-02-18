@@ -1,10 +1,6 @@
 use std::path::PathBuf;
-use ratatui::style::Style;
-use ratatui::widgets::List;
 use ratatui::widgets::ListItem;
 use ansi_to_tui::IntoText;
-
-use crate::data;
 use crate::views;
 use crate::windows;
 use crate::terminal;

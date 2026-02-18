@@ -1,5 +1,5 @@
 use crate::data::{chat::NPC, player};
-use std::{collections::HashMap, ffi::OsStr, hash, path::PathBuf, sync::OnceLock};
+use std::{collections::HashMap, path::PathBuf, sync::OnceLock};
 
 #[derive(Debug)]
 pub enum Effect{

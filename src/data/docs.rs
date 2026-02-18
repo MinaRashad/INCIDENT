@@ -4,7 +4,7 @@ pub const OS_LOGO_PATH:&str = "assets/images/OS_logo.png";
 
 use rusqlite::params;
 use rusqlite::OptionalExtension;
-use crate::data::{Entry, Tag, Metadata, MetadataField};
+use crate::data::{Entry, Metadata, MetadataField};
 
 use crate::data::METADATA_DB;
 

@@ -48,5 +48,6 @@ pub struct Message{
 #[derive(Debug,Default)]
 pub struct ChatAppState{
     pub current_selection:ListState,
-    pub chat_scroll:usize
+    pub chat_scroll:usize,
+    pub running:bool
 }

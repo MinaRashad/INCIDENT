@@ -1,4 +1,3 @@
-use std::io::{Stdin, Stdout};
 use std::env;
 use std::os::windows::process::CommandExt;
 
@@ -6,19 +5,7 @@ use std::os::windows::process::CommandExt;
 // windows. Nothing related to the windows
 // operating system specifically
 
-/// Represents a terminal window instance
-/// Contains process information and I/O streams for the window
-/// Currently unused - structure for future multi-window management
-struct Window{
-    /// Display name of the window/mode
-    name:String,
-    /// Process ID of the window
-    pid:i32,
-    /// Standard input stream for the window
-    input_stream:Stdin,
-    /// Standard output stream for the window
-    output_streem:Stdout
-}
+
 
 /// Terminal emulator command for Windows
 #[cfg(target_os = "windows")]
@@ -50,7 +37,7 @@ pub fn start_mode(name:&str){
     // name would be the assigned mode
     let exe_path = match env::current_exe() {
         Ok(x)=> x,
-        Err(x)=> panic!("Unable to get exe path")
+        Err(err)=> panic!("Unable to get exe path: {err}")
     };
 
     let exe_path = match exe_path.to_str() {

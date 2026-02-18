@@ -55,12 +55,12 @@ pub fn set_title(title:&str){
 }
 
 /// Enables automatic text wrapping at the terminal edge
-pub fn enable_text_warp(){
-    print!("{CSI}?7h");
-    io::stdout().flush()
-        .expect("Failed to flush");
+// pub fn enable_text_warp(){
+//     print!("{CSI}?7h");
+//     io::stdout().flush()
+//         .expect("Failed to flush");
 
-}
+// }
 
 /// Disables automatic text wrapping - text will be truncated at edge
 pub fn disable_text_warp(){
@@ -244,18 +244,18 @@ pub fn drain_input() {
 // cursor
 
 /// Moves cursor up by specified number of rows
-pub fn move_cursor_up(rows:usize){
-    print!("{CSI}{rows}A");
-    io::stdout().flush()
-        .expect("Failed to flush");
-}
+// pub fn move_cursor_up(rows:usize){
+//     print!("{CSI}{rows}A");
+//     io::stdout().flush()
+//         .expect("Failed to flush");
+// }
 
-/// Moves cursor down by specified number of rows
-pub fn move_cursor_down(rows:usize){
-    print!("{CSI}{rows}B");
-    io::stdout().flush()
-        .expect("Failed to flush");
-}
+// /// Moves cursor down by specified number of rows
+// pub fn move_cursor_down(rows:usize){
+//     print!("{CSI}{rows}B");
+//     io::stdout().flush()
+//         .expect("Failed to flush");
+// }
 
 /// Moves cursor right by specified number of columns
 pub fn move_cursor_right(cols:usize){
@@ -315,18 +315,18 @@ pub fn exit_alternative_buffer(){
 // scrolling
 
 /// Scrolls the screen down by n lines (content moves up)
-pub fn scroll_down(n:usize){
-    print!("{CSI}{n}S");
-    io::stdout().flush()
-        .expect("Failed to flush");
-}
+// pub fn scroll_down(n:usize){
+//     print!("{CSI}{n}S");
+//     io::stdout().flush()
+//         .expect("Failed to flush");
+// }
 
-/// Scrolls the screen up by n lines (content moves down)
-pub fn scroll_up(n:usize){
-    print!("{CSI}{n}T");
-    io::stdout().flush()
-        .expect("Failed to flush");
-}
+// /// Scrolls the screen up by n lines (content moves down)
+// pub fn scroll_up(n:usize){
+//     print!("{CSI}{n}T");
+//     io::stdout().flush()
+//         .expect("Failed to flush");
+// }
 
 
 // random stuff

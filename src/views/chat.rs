@@ -3,14 +3,13 @@ use std::time::Duration;
 
 use crossterm::event::Event;
 use crossterm::event::KeyCode;
+use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
 use crossterm::event::poll;
 use crossterm::event::read;
 
 use ratatui::Frame;
-use ratatui::layout::Alignment;
 use ratatui::layout::Constraint;
-use ratatui::layout::Direction;
 use ratatui::layout::Layout;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -20,7 +19,6 @@ use ratatui::widgets::Block;
 use ratatui::widgets::Borders;
 use ratatui::widgets::List;
 use ratatui::widgets::ListItem;
-use ratatui::widgets::ListState;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::BorderType;
 use ratatui::widgets::Wrap;
@@ -29,11 +27,9 @@ use ratatui::widgets::Wrap;
 
 use crate::menu_components;
 use crate::GameState;
-use crate::data::player;
 use crate::sound;
 use crate::terminal;
 
-use crate::data;
 use crate::data::chat::{ChatAppState, NPC, ChatLog, Message};
 
 /// Entry point for the chat log viewer
@@ -45,11 +41,13 @@ pub fn start()->GameState{
 
     let mut terminal = ratatui::init();
     
-    let mut chatApp_state: ChatAppState = ChatAppState::default();
-    chatApp_state.current_selection.select(Some(0));
-    loop {
+    let mut chat_app_state: ChatAppState = ChatAppState::default();
+    chat_app_state.current_selection.select(Some(0));
+    chat_app_state.running = true;
+    while chat_app_state.running {
         // render chat
-        terminal.draw(|f| render_chat(f, &mut chatApp_state))
+        terminal.draw(|f| 
+            render_chat(f, &mut chat_app_state))
             .expect("failed to draw a frame");
 
         // input logic is here
@@ -57,35 +55,7 @@ pub fn start()->GameState{
             // input goes here
             match read() {
                 Ok(Event::Key(k))
-                if k.is_release() => 
-                {
-                    sound::play(sound::SoundCategory::GUIFeedback);
-                    match k.code {
-                    KeyCode::Esc => break,
-                    KeyCode::Down => {
-                        // +shift means changing chat
-                        if k.modifiers.contains(KeyModifiers::SHIFT)
-                        {
-                            sound::play(sound::SoundCategory::GUIFeedback);
-                            chatApp_state.current_selection.select_next();
-                        }
-                        else{
-                            chatApp_state.chat_scroll += 1
-                        }
-
-                    },
-                    KeyCode::Up => {
-                        if k.modifiers.contains(KeyModifiers::SHIFT)
-                        {
-                            sound::play(sound::SoundCategory::GUIFeedback);
-                            chatApp_state.current_selection.select_previous();
-                        }
-                        else{
-                            chatApp_state.chat_scroll = (chatApp_state.chat_scroll.saturating_sub(1)).max(0)
-                        }
-                    },
-                    _ => {}
-                }}
+                if k.is_release() => handle_key_input(k, &mut chat_app_state),            
                 _ => {} // do nothing if anything else including error
             };
         }
@@ -292,11 +262,11 @@ fn render_conversation(frame: &mut Frame,
                                 Constraint::Fill(1),        // right padding
                             ]).split(message_row);
 
-            let (LEFT, RIGHT) = (1,3);
+            let (left, right) = (1,3);
             let side = if is_recieved {
-                            LEFT
+                            left
                         } else {
-                            RIGHT
+                            right
                         };
             
 
@@ -306,9 +276,35 @@ fn render_conversation(frame: &mut Frame,
 
 }
 
+fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
+    sound::play(sound::SoundCategory::GUIFeedback);
+    match k.code {
+    KeyCode::Esc => chat_app_state.running=false,
+    KeyCode::Down => {
+        // +shift means changing chat
+        if k.modifiers.contains(KeyModifiers::SHIFT)
+        {
+            sound::play(sound::SoundCategory::GUIFeedback);
+            chat_app_state.current_selection.select_next();
+        }
+        else{
+            chat_app_state.chat_scroll += 1
+        }
 
-
-
+    },
+    KeyCode::Up => {
+        if k.modifiers.contains(KeyModifiers::SHIFT)
+        {
+            sound::play(sound::SoundCategory::GUIFeedback);
+            chat_app_state.current_selection.select_previous();
+        }
+        else{
+            chat_app_state.chat_scroll = (chat_app_state.chat_scroll.saturating_sub(1)).max(0)
+        }
+    },
+    _ => {}
+    }
+}
 
 
 // Static historical chats functions
@@ -465,13 +461,16 @@ pub fn parse_and_display_chat(content: &str, participants: (&str, &str)) {
         }
         
         // Parse: "[Nov 2, 10:23 PM] Sarah: Message here"
-        if let Some((timestamp, rest)) = parse_message_line(line) {
-            if let Some((sender, message)) = rest.split_once(": ") {
-                let is_left = sender.trim() == person1;
-                display_chat_bubble(sender.trim(), &timestamp, message.trim(), is_left);
-                if wait {thread::sleep(Duration::from_secs(2))};
-            }
+        if 
+        let Some((timestamp, rest)) = parse_message_line(line)
+        && 
+        let Some((sender, message)) = rest.split_once(": ") 
+        {
+            let is_left = sender.trim() == person1;
+            display_chat_bubble(sender.trim(), &timestamp, message.trim(), is_left);
+            if wait {thread::sleep(Duration::from_secs(2))};
         }
+        
 
         let key = terminal::get_input_now();
         if key.is_esc() {

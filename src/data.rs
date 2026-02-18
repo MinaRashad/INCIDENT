@@ -8,12 +8,11 @@ use serde::Serialize;
 use std::{ fs, path::{Path, PathBuf}};
 use sha2::{Sha256, Digest};
 
-use crate::{menu_components, terminal};
 
 
-/// Thread-local database connection for file metadata
-/// Each thread gets its own connection instance via OnceLock
-/// Initialized once per thread by init_db()
+// / Thread-local database connection for file metadata
+// / Each thread gets its own connection instance via OnceLock
+// / Initialized once per thread by init_db()
 thread_local! {
     pub static METADATA_DB: OnceLock<Connection> = OnceLock::new();
 }
@@ -27,11 +26,7 @@ const MAIN_METADATA_FILE:&str = "main.db";
 
 // Documents
 
-/// Represents a password string
-/// Wraps the password content for type safety
-pub struct Password{
-    content:String
-}
+
 
 /// Represents an image document with its file path
 /// Tuple struct containing the path to the image file

@@ -1,18 +1,16 @@
-use std::io::{self, Write};
+use std::io;
 use std::path::PathBuf;
-use std::thread::sleep;
-use std::time::{self, Duration, Instant};
+use std::time::{self, Duration};
 
+use crossterm::event::read;
 use rascii_art;
-
-use ansi_to_tui::IntoText;
 
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
 };
 use crossterm::{
-    event::{self, Event, KeyCode, poll, read},
+    event::{self, Event, KeyCode},
     terminal::{enable_raw_mode, disable_raw_mode},
 };
 
@@ -298,14 +296,19 @@ pub fn date()->Result<[u64; 3],time::SystemTimeError>
 /// Displays a "Press anything to Continue..." prompt and waits for input
 /// Text is centered and blinking
 /// Waits for user to press Enter before continuing
-pub fn wait_for_input(){
+pub fn wait_for_input() -> Option<()> {
     let sub = "Press anything to Continue...".to_string();
     let sub = terminal::center(sub);
     let sub = terminal::blink(sub);
     println!("{}",sub);
 
-    let mut buf = String::new();
-    io::stdin().read_line(&mut buf).expect("An error occured");
+    loop{
+        if let Event::Key(k) = read().ok()?{
+            if k.is_release(){
+                break Some(());
+            }
+        }
+    }
 }
 
 /// Displays scroll instructions and waits for Enter key
