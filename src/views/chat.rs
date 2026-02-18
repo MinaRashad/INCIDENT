@@ -3,16 +3,19 @@ use std::time::Duration;
 
 use crossterm::event::Event;
 use crossterm::event::KeyCode;
+use crossterm::event::KeyModifiers;
 use crossterm::event::poll;
 use crossterm::event::read;
 
 use ratatui::Frame;
+use ratatui::layout::Alignment;
 use ratatui::layout::Constraint;
 use ratatui::layout::Direction;
 use ratatui::layout::Layout;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
+use ratatui::text::ToText;
 use ratatui::widgets::Block;
 use ratatui::widgets::Borders;
 use ratatui::widgets::List;
@@ -20,6 +23,7 @@ use ratatui::widgets::ListItem;
 use ratatui::widgets::ListState;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::BorderType;
+use ratatui::widgets::Wrap;
 
 
 
@@ -48,7 +52,7 @@ pub fn start()->GameState{
         terminal.draw(|f| render_chat(f, &mut chatApp_state))
             .expect("failed to draw a frame");
 
-        // input
+        // input logic is here
         if poll(Duration::from_millis(500)).is_ok(){
             // input goes here
             match read() {
@@ -59,12 +63,26 @@ pub fn start()->GameState{
                     match k.code {
                     KeyCode::Esc => break,
                     KeyCode::Down => {
-                        sound::play(sound::SoundCategory::GUIFeedback);
-                        chatApp_state.current_selection.select_next();
+                        // +shift means changing chat
+                        if k.modifiers.contains(KeyModifiers::SHIFT)
+                        {
+                            sound::play(sound::SoundCategory::GUIFeedback);
+                            chatApp_state.current_selection.select_next();
+                        }
+                        else{
+                            chatApp_state.chat_scroll += 1
+                        }
+
                     },
                     KeyCode::Up => {
-                        sound::play(sound::SoundCategory::GUIFeedback);
-                        chatApp_state.current_selection.select_previous();
+                        if k.modifiers.contains(KeyModifiers::SHIFT)
+                        {
+                            sound::play(sound::SoundCategory::GUIFeedback);
+                            chatApp_state.current_selection.select_previous();
+                        }
+                        else{
+                            chatApp_state.chat_scroll = (chatApp_state.chat_scroll.saturating_sub(1)).max(0)
+                        }
                     },
                     _ => {}
                 }}
@@ -83,9 +101,7 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
 
     let frame_area = frame.area();
 
-    let general_layout = Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints(
+    let general_layout = Layout::vertical(
                         [
                             Constraint::Length(5), // header
                             Constraint::Fill(1), // app content
@@ -93,9 +109,7 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
                         ]
                     ).split(frame_area);
     
-    let app_layout = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints(
+    let app_layout = Layout::horizontal(
                         [
                             Constraint::Percentage(39), // Chats
                             Constraint::Fill(1) // chat area
@@ -114,7 +128,7 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
     let current_chat = Block::bordered();
     
 
-    let help = Paragraph::new("[ESC] close  [↑↓] navigate  [ENTER] open")
+    let help = Paragraph::new("[ESC] close  [↑↓] scroll  [SHIFT+↑↓] change chat")
                 .centered().reversed();
 
     
@@ -125,6 +139,79 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
     render_chatlogs(frame, 
         app_layout[0],
          chat_app_state);
+
+    let chat_log = ChatLog {
+        sender: NPC::Marcus,
+        messages: vec![
+            Message {
+                is_recieved: true,
+                content: "Hey! How are you doing?".to_string(),
+            },
+            Message {
+                is_recieved: false,
+                content: "I'm good, thanks! How about you?".to_string(),
+            },
+            Message {
+                is_recieved: true,
+                content: "Pretty good! Did you finish that project we were talking about last week?".to_string(),
+            },
+            Message {
+                is_recieved: false,
+                content: "Almost done, just debugging some really annoying issues with the database connections. You know how it goes.".to_string(),
+            },
+            Message {
+                is_recieved: true,
+                content: "Oh yeah, database stuff is always a pain. What kind of errors are you getting?".to_string(),
+            },
+            Message {
+                is_recieved: false,
+                content: "Mostly timeout issues when the server gets under heavy load. I think it's a connection pool problem but I'm not entirely sure yet.".to_string(),
+            },
+            Message {
+                is_recieved: true,
+                content: "Have you tried increasing the pool size or adjusting the timeout settings?".to_string(),
+            },
+            Message {
+                is_recieved: false,
+                content: "Yeah I tried both. Increasing pool size helped a bit but didn't solve it completely. I'm thinking maybe there's a leak somewhere.".to_string(),
+            },
+            Message {
+                is_recieved: true,
+                content: "Connection leaks are tricky. Make sure you're properly closing connections in your finally blocks or using context managers if you're in Python.".to_string(),
+            },
+            Message {
+                is_recieved: false,
+                content: "Good point. I'll audit the code to make sure all connections are being properly released. Thanks for the suggestion!".to_string(),
+            },
+            Message {
+                is_recieved: true,
+                content: "No problem! Let me know if you need a second pair of eyes on the code. I've dealt with similar issues before.".to_string(),
+            },
+            Message {
+                is_recieved: false,
+                content: "Will do, I really appreciate it. How's your project going by the way?".to_string(),
+            },
+            Message {
+                is_recieved: true,
+                content: "It's going well actually. We just finished the beta testing phase and the feedback has been mostly positive. A few bugs to fix but nothing major.".to_string(),
+            },
+            Message {
+                is_recieved: false,
+                content: "That's awesome! When are you planning to launch?".to_string(),
+            },
+            Message {
+                is_recieved: true,
+                content: "Probably in about two weeks if everything goes smoothly. Still need to finalize some UI tweaks and update the documentation.".to_string(),
+            },
+            Message {
+                is_recieved: false,
+                content: "Exciting times! I'll definitely check it out when it launches.".to_string(),
+            },
+        ],
+    };
+
+    render_conversation(frame, app_layout[1],
+         chat_log, chat_app_state);
 }
 
 fn render_chatlogs(frame: &mut Frame, chatlog_area:Rect,
@@ -142,6 +229,81 @@ fn render_chatlogs(frame: &mut Frame, chatlog_area:Rect,
     .highlight_style(Style::new().reversed());
 
     frame.render_stateful_widget(list, chatlog_area, &mut chatlog_state.current_selection);
+}
+
+fn render_conversation(frame: &mut Frame, 
+    conversation_area:Rect, chat_log: ChatLog, chat_app_state:&ChatAppState){
+        
+    let msgs = chat_log.messages;
+
+    let chat_bubble_width = conversation_area.width * 45 / 100;
+    
+    let start = (chat_app_state.chat_scroll)
+                .min(msgs.len());
+
+    
+    let mut visible_message_count = 0; // how messages can we see now
+    let mut constraints : Vec<Constraint> = vec![];
+    let mut total_height = 0; // total height of the messages
+
+    for msg in &msgs[start..] {
+        let msg_height = calculate_message_height(&msg.content, chat_bubble_width);
+        
+        if total_height + msg_height > conversation_area.height {
+            break;
+        }
+        visible_message_count += 1;
+        
+        constraints.push(Constraint::Length(msg_height));
+        total_height += msg_height;
+    }
+    
+    let messages_layout = Layout::vertical(constraints)
+                                .split(conversation_area);
+
+    // iterate through messages to display bubbles
+    for i in (start)..(start+visible_message_count)
+    {
+            let msg = &msgs[i];
+            let content = &msg.content;
+            let is_recieved = msg.is_recieved;
+            let npc = chat_log.sender;
+
+            let message_bubble = Paragraph::new(content.to_text())
+                        .centered()
+                        .block(Block::bordered()
+                        .title(if is_recieved{
+                            npc.name()
+                        }else{
+                            "You"
+                        })
+                        .title_style(Style::new().bold())
+                    )
+                        .wrap(Wrap{trim:true});
+            let layout_idx = i - start;
+            let message_row = messages_layout[layout_idx];
+
+            // lets split this to a horizontal layout
+            let row_layout = Layout::horizontal([
+                                Constraint::Fill(1),        // left padding
+                                Constraint::Percentage(45), // incoming messages (left side)
+                                Constraint::Fill(1),        // center padding
+                                Constraint::Percentage(45), // outgoing messages (right side)
+                                Constraint::Fill(1),        // right padding
+                            ]).split(message_row);
+
+            let (LEFT, RIGHT) = (1,3);
+            let side = if is_recieved {
+                            LEFT
+                        } else {
+                            RIGHT
+                        };
+            
+
+
+            frame.render_widget(message_bubble, row_layout[side]);
+        }
+
 }
 
 
@@ -260,6 +422,12 @@ pub fn word_wrap(text: &str, max_width: usize) -> Vec<String> {
     }
     
     lines
+}
+
+fn calculate_message_height(content: &str, width: u16) -> u16 {
+    let content_width = width.saturating_sub(2) as usize; // subtract borders
+    let wrapped_lines = word_wrap(content, content_width);
+    wrapped_lines.len() as u16 + 2 // number of lines + 2 for borders
 }
 
 /// Parses and displays a complete chat conversation
