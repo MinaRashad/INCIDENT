@@ -1,11 +1,16 @@
-use crate::data::player;
-use std::{collections::HashMap, ffi::OsStr, path::PathBuf, sync::OnceLock};
+use crate::data::{chat::NPC, player};
+use std::{collections::HashMap, ffi::OsStr, hash, path::PathBuf, sync::OnceLock};
 
 #[derive(Debug)]
 pub enum Effect{
     IncreaseClearance,
     DecreaseClearance,
     SetClearance(u32)
+}
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum EventType {
+    OnChatWith(NPC),
+    OnPathOpen(PathBuf)
 }
 
 impl Effect {
@@ -23,12 +28,12 @@ impl Effect {
     }
 }
 
-pub static ON_OPEN:OnceLock< HashMap<&OsStr, Effect> > = OnceLock::new() ;
+pub static ON_EVENT:OnceLock< HashMap<EventType, Effect> > = OnceLock::new() ;
 
 pub fn init_events() {
     let mut map = HashMap::new();
 
-    map.insert(OsStr::new("Det. Rodriguez"), Effect::IncreaseClearance);
+    map.insert(EventType::OnChatWith(NPC::Rodriguez), Effect::IncreaseClearance);
 
-    let _ = ON_OPEN.set(map);
+    let _ = ON_EVENT.set(map);
 }

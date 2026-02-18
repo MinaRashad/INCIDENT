@@ -28,6 +28,7 @@ use crate::data::ImageDoc;
 use crate::data::docs::metadata;
 use crate::data::{Metadata, MetadataField, Entry};
 use crate::data::docs::update_metadata;
+use crate::events::EventType;
 use crate::menu_components;
 use crate::game_state::GameState;
 use crate::terminal;
@@ -96,12 +97,11 @@ pub fn open_path(path:PathBuf) -> GameState{
         update_metadata(&entry, MetadataField::Opened(true));
 
         // check and activate effects ON_OPEN
-        let map = events::ON_OPEN.get()
+        let map = events::ON_EVENT.get()
                     .expect("Unable to retrieve the effect map");
-        
+        let event = EventType::OnPathOpen(path.clone());
         if let Some(effect) = map.get(
-                    path.file_name()
-                    .unwrap_or_default()
+                    &event
                 ){  
                     effect.activate();
                 } 
