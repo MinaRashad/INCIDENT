@@ -1,30 +1,20 @@
-use std::thread;
-use std::time::Duration;
+use std::{thread, time::Duration};
 
-use crossterm::event::Event;
-use crossterm::event::KeyCode;
-use crossterm::event::KeyEvent;
-use crossterm::event::KeyModifiers;
-use crossterm::event::poll;
-use crossterm::event::read;
+use crossterm::event::{
+    poll, read, Event, KeyCode, KeyEvent, KeyModifiers,
+};
 
-use ratatui::Frame;
-use ratatui::layout::Constraint;
-use ratatui::layout::Layout;
-use ratatui::layout::Rect;
-use ratatui::style::Style;
-use ratatui::style::Stylize;
-use ratatui::text::ToText;
-use ratatui::widgets::Block;
-use ratatui::widgets::Borders;
-use ratatui::widgets::List;
-use ratatui::widgets::ListItem;
-use ratatui::widgets::Paragraph;
-use ratatui::widgets::BorderType;
-use ratatui::widgets::Wrap;
+use ratatui::{
+    Frame,
+    layout::{Constraint, Layout, Rect},
+    style::{Style, Stylize},
+    text::ToText,
+    widgets::{Block, BorderType, Borders, List, ListItem, Paragraph, Wrap},
+};
 
 
 
+use crate::data::chat::Choice;
 use crate::menu_components;
 use crate::GameState;
 use crate::sound;
@@ -42,8 +32,19 @@ pub fn start()->GameState{
     let mut terminal = ratatui::init();
     
     let mut chat_app_state: ChatAppState = ChatAppState::default();
-    chat_app_state.current_selection.select(Some(0));
+    chat_app_state.current_chat_selection.select(Some(0));
+    chat_app_state.current_choice_selection = 0;
     chat_app_state.running = true;
+    chat_app_state.choices = vec![
+        Choice{
+            text: "Yes of course".to_string(),
+            next_node: "chat_1".to_string()
+    },
+        Choice{
+            text: "No, Fuck you".to_string(),
+            next_node: "chat_2".to_string()
+        }];
+
     while chat_app_state.running {
         // render chat
         terminal.draw(|f| 
@@ -86,6 +87,12 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
                         ]
                     ).split(general_layout[1]);
 
+    let conversation_layout = Layout::vertical(
+                        [
+                            Constraint::Fill(1), // chat area
+                            Constraint::Length(3) // Choices
+                    ]).split(app_layout[1]);
+
     let header = Paragraph::new("Whats'agram")
                 .centered()
                 .block(
@@ -93,18 +100,14 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
                     .borders(Borders::ALL)
                 );
 
-
-
-    let current_chat = Block::bordered();
     
 
-    let help = Paragraph::new("[ESC] close  [↑↓] scroll  [SHIFT+↑↓] change chat")
+    let help = Paragraph::new("[ESC] close  [↑↓] scroll  [←→] switch choice  [Enter] select  [SHIFT+↑↓] change chat")
                 .centered().reversed();
 
     
     frame.render_widget(header, general_layout[0]);
     frame.render_widget(help, general_layout[2]);
-    frame.render_widget(current_chat, app_layout[1]);
 
     render_chatlogs(frame, 
         app_layout[0],
@@ -112,76 +115,21 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
 
     let chat_log = ChatLog {
         sender: NPC::Marcus,
-        messages: vec![
-            Message {
+        messages: vec![Message {
                 is_recieved: true,
                 content: "Hey! How are you doing?".to_string(),
             },
             Message {
                 is_recieved: false,
                 content: "I'm good, thanks! How about you?".to_string(),
-            },
-            Message {
-                is_recieved: true,
-                content: "Pretty good! Did you finish that project we were talking about last week?".to_string(),
-            },
-            Message {
-                is_recieved: false,
-                content: "Almost done, just debugging some really annoying issues with the database connections. You know how it goes.".to_string(),
-            },
-            Message {
-                is_recieved: true,
-                content: "Oh yeah, database stuff is always a pain. What kind of errors are you getting?".to_string(),
-            },
-            Message {
-                is_recieved: false,
-                content: "Mostly timeout issues when the server gets under heavy load. I think it's a connection pool problem but I'm not entirely sure yet.".to_string(),
-            },
-            Message {
-                is_recieved: true,
-                content: "Have you tried increasing the pool size or adjusting the timeout settings?".to_string(),
-            },
-            Message {
-                is_recieved: false,
-                content: "Yeah I tried both. Increasing pool size helped a bit but didn't solve it completely. I'm thinking maybe there's a leak somewhere.".to_string(),
-            },
-            Message {
-                is_recieved: true,
-                content: "Connection leaks are tricky. Make sure you're properly closing connections in your finally blocks or using context managers if you're in Python.".to_string(),
-            },
-            Message {
-                is_recieved: false,
-                content: "Good point. I'll audit the code to make sure all connections are being properly released. Thanks for the suggestion!".to_string(),
-            },
-            Message {
-                is_recieved: true,
-                content: "No problem! Let me know if you need a second pair of eyes on the code. I've dealt with similar issues before.".to_string(),
-            },
-            Message {
-                is_recieved: false,
-                content: "Will do, I really appreciate it. How's your project going by the way?".to_string(),
-            },
-            Message {
-                is_recieved: true,
-                content: "It's going well actually. We just finished the beta testing phase and the feedback has been mostly positive. A few bugs to fix but nothing major.".to_string(),
-            },
-            Message {
-                is_recieved: false,
-                content: "That's awesome! When are you planning to launch?".to_string(),
-            },
-            Message {
-                is_recieved: true,
-                content: "Probably in about two weeks if everything goes smoothly. Still need to finalize some UI tweaks and update the documentation.".to_string(),
-            },
-            Message {
-                is_recieved: false,
-                content: "Exciting times! I'll definitely check it out when it launches.".to_string(),
-            },
-        ],
+            },],
     };
 
-    render_conversation(frame, app_layout[1],
+
+    render_conversation(frame, conversation_layout[0],
          chat_log, chat_app_state);
+
+    render_choices(frame, conversation_layout[1], chat_app_state);
 }
 
 fn render_chatlogs(frame: &mut Frame, chatlog_area:Rect,
@@ -198,7 +146,7 @@ fn render_chatlogs(frame: &mut Frame, chatlog_area:Rect,
     .block(Block::bordered().title("Chats"))
     .highlight_style(Style::new().reversed());
 
-    frame.render_stateful_widget(list, chatlog_area, &mut chatlog_state.current_selection);
+    frame.render_stateful_widget(list, chatlog_area, &mut chatlog_state.current_chat_selection);
 }
 
 fn render_conversation(frame: &mut Frame, 
@@ -276,6 +224,38 @@ fn render_conversation(frame: &mut Frame,
 
 }
 
+fn render_choices(frame: &mut Frame, choice_area:Rect, 
+    chat_app_state:&ChatAppState){
+
+        let choices = &chat_app_state.choices;
+        let constraints: Vec<Constraint> = choices.iter().
+                    map(|_| Constraint::Fill(1))
+                    .collect();
+
+        let button_layout = Layout::horizontal(constraints)
+                    .split(choice_area);
+
+        let choices_items:Vec<Paragraph> = choices.iter()
+                    .map(|choice| choice.text.clone())
+                    .map(|choice| Paragraph::new(choice)
+                            .block(Block::bordered()) 
+                    )
+                    .enumerate()
+                    .map(|(i, choice)|
+                        if i == chat_app_state.current_choice_selection {
+                            choice.style(Style::new().reversed())
+                        }
+                        else{
+                            choice
+                        }
+                    )
+                    .collect();
+        for (i, choice) in choices_items.iter().enumerate(){
+            frame.render_widget(choice, button_layout[i]);
+        }
+
+    }
+
 fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
     sound::play(sound::SoundCategory::GUIFeedback);
     match k.code {
@@ -285,7 +265,7 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
         if k.modifiers.contains(KeyModifiers::SHIFT)
         {
             sound::play(sound::SoundCategory::GUIFeedback);
-            chat_app_state.current_selection.select_next();
+            chat_app_state.current_chat_selection.select_next();
         }
         else{
             chat_app_state.chat_scroll += 1
@@ -296,11 +276,28 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
         if k.modifiers.contains(KeyModifiers::SHIFT)
         {
             sound::play(sound::SoundCategory::GUIFeedback);
-            chat_app_state.current_selection.select_previous();
+            chat_app_state.current_chat_selection.select_previous();
         }
         else{
             chat_app_state.chat_scroll = (chat_app_state.chat_scroll.saturating_sub(1)).max(0)
         }
+    },
+    KeyCode::Left => {
+        let num_choices: usize = chat_app_state.choices.len();
+
+        chat_app_state.current_choice_selection = 
+                if chat_app_state.current_choice_selection == 0
+                {
+                    num_choices - 1
+                } else {
+                    chat_app_state
+                            .current_choice_selection.saturating_sub(1)
+                }
+    },
+    KeyCode::Right => {
+        let num_choices: usize = chat_app_state.choices.len();
+        chat_app_state.current_choice_selection += 1;
+        chat_app_state.current_choice_selection = chat_app_state.current_choice_selection % num_choices;
     },
     _ => {}
     }
@@ -441,8 +438,22 @@ fn calculate_message_height(content: &str, width: u16) -> u16 {
 /// Messages from person1 align left, messages from person2 align right.
 /// Displays a centered header with participant names.
 /// Sleeps 2 seconds between messages for readability.
-pub fn parse_and_display_chat(content: &str, participants: (&str, &str)) {
-    let (person1, person2) = participants; // e.g., ("Sarah", "Marcus")
+pub fn parse_and_display_chat(content: &str) {
+    let mut lines = content.lines();
+        let line = lines.next();
+        let line = match line {
+            Some(line)=>line,
+            None => return ()
+        };
+        let split = line.split("][");
+        let split : Vec<&str> = split.into_iter().collect();
+        let sender = split[1];
+        let reciever = split[2];
+        let reciever = match reciever.strip_suffix(']') {
+            Some(r)=> r,
+            None => reciever
+        };
+    let (person1, person2) = (sender, reciever); // e.g., ("Sarah", "Marcus")
     let mut header = String::new();
     header += "\n┌─────────────────────────────────────┐\n";
     header +="│ TEXT MESSAGE LOG                    │\n";

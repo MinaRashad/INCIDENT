@@ -1,5 +1,6 @@
 use crate::data;
 use crate::data::docs::metadata;
+use crate::menu_components::wait_for_input;
 use crate::sound;
 use crate::sound::SoundCategory;
 use crate::terminal;
@@ -193,10 +194,7 @@ pub fn unauthorized_access(path: PathBuf) -> GameState {
     println!();
     println!();
     
-    let instruction = terminal::faint("Press any key to return...".to_string());
-    println!("{}", terminal::center(instruction));
-    
-    terminal::get_input();
+    menu_components::wait_for_input();
     
     GameState::GoBack(previous_path)
 }
@@ -379,9 +377,6 @@ pub fn print_wrong_password() {
     println!();
     println!();
 
-    let instruction = terminal::faint("Press any key to continue...".to_string());
-    println!("{}", terminal::center(instruction));
-
-    terminal::get_input();
-
+    
+    menu_components::wait_for_input();
 }

@@ -24,6 +24,27 @@ CREATE TABLE IF NOT EXISTS player (
     access_level INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE messages (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender      TEXT NOT NULL,      -- NPC name or "player"
+    content     TEXT NOT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE npc_dialogue_state (
+    npc_name TEXT PRIMARY KEY,
+    node TEXT NOT NULL
+);
+
+CREATE TABLE conditions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+
 
 -- INSERT INTO metadata (path, access_level)
 -- VALUES ('/example/path', 2);

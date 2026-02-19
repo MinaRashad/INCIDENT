@@ -13,6 +13,7 @@ use crossterm::{
     event::{self, Event, KeyCode},
     terminal::{enable_raw_mode, disable_raw_mode},
 };
+use sha2::digest::crypto_common::Key;
 
 
 
@@ -297,14 +298,18 @@ pub fn date()->Result<[u64; 3],time::SystemTimeError>
 /// Text is centered and blinking
 /// Waits for user to press Enter before continuing
 pub fn wait_for_input() -> Option<()> {
-    let sub = "Press anything to Continue...".to_string();
+    let sub = "Press Entry to Continue...".to_string();
     let sub = terminal::center(sub);
     let sub = terminal::blink(sub);
     println!("{}",sub);
 
     loop{
         if let Event::Key(k) = read().ok()?{
-            if k.is_release(){
+            if 
+            k.is_release() 
+            &&
+            KeyCode::is_enter(&k.code)
+            {
                 break Some(());
             }
         }

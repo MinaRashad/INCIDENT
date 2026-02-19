@@ -10,6 +10,7 @@ use std::time::Duration;
 
 use ansi_to_tui::IntoText;
 
+use log::error;
 use ratatui::{
     prelude::*,
     widgets::Paragraph,
@@ -124,18 +125,26 @@ pub fn open_path(path:PathBuf) -> GameState{
 
 fn open_dir(path:PathBuf) -> GameState{
     // we come here from Docs,
+    let fallback = GameState::GoBack(PathBuf::from(DOCS_ROOT));
     if !path.is_dir() {
-        panic!("open_dir called on a file")
+        error!("open_dir called on a file");
+        return fallback;
     }
     let contents = get_folder_contents(path.clone());
     let contents = match contents {
         Ok(result)=>result,
-        Err(_)=>panic!("Unable to retireve root docs contents")
+        Err(_)=>{
+            error!("Failed to get folder contents");
+            return fallback;
+        }
     };
 
     let contents = match get_options(contents) {
         Ok(v)=> v,
-        Err(_)=> panic!("Failed to format options")
+        Err(_)=> {
+            error!("Failed to generate options from folder contents");
+            return fallback;
+        }
     };
 
     let title = path.to_str()
@@ -186,14 +195,17 @@ fn path_gamestate(path:&PathBuf)->GameState{
 
 fn open_file(path:PathBuf) -> GameState{
     if !path.is_file() {
-        panic!("open file called on dir")
+        error!("open_file called on a nonfile");
+        return GameState::GoBack(PathBuf::from(DOCS_ROOT));
+
     };
-
     
-
     let header_str = match name(&path) {
         Ok(s) => header(s),
-        Err(_) => panic!("Unable to create the header")
+        Err(_) => {
+            error!("open_file called on a nonfile");
+            return GameState::GoBack(PathBuf::from(DOCS_ROOT));
+        }
     };
 
 
@@ -218,22 +230,7 @@ fn open_file(path:PathBuf) -> GameState{
     terminal::clear_scrollback();
 
     if file_content.starts_with("[CHAT]"){
-        let mut lines = file_content.lines();
-        let line = lines.next();
-        let line = match line {
-            Some(line)=>line,
-            None => panic!("How come we cant get the first line")
-        };
-        let split = line.split("][");
-        let split : Vec<&str> = split.into_iter().collect();
-        let sender = split[1];
-        let reciever = split[2];
-        let reciever = match reciever.strip_suffix(']') {
-            Some(r)=> r,
-            None => reciever
-        };
-
-        chat::parse_and_display_chat(&file_content, (sender, reciever));
+        chat::parse_and_display_chat(&file_content);
     }
     else{
         let file_content = header_str + file_content.as_str();
@@ -285,10 +282,16 @@ fn get_folder_contents(path:PathBuf)
     let folder = fs::read_dir(&path)?;
 
 
-    let result: Vec<(bool, OsString, PathBuf)> = folder.map(|entry| match entry {
-                        Ok(entry)=> entry,
-                        Err(_) => panic!("Something unexpected happened")                        
+    let result: Vec<(bool, OsString, PathBuf)> = folder
+                        .map(|entry| match entry {
+                        Ok(entry)=> Some(entry),
+                        Err(_) => {
+                            error!("Failed ro read a file");
+                            return None
+                        }                       
                     })
+                    .filter(|entry| entry.is_some())
+                    .map(|entry| entry.unwrap())
                     .map(|entry| (entry.file_name(), entry.path()))
                     .map(|entry| (entry.1.is_dir(), entry.0, entry.1))
                     .into_iter()

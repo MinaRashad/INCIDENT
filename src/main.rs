@@ -10,6 +10,8 @@ mod util;
 mod events;
 
 use std::{env, io::Error};
+use log;
+use env_logger;
 use game_state::GameState;
 
 struct CleanUp;
@@ -57,5 +59,6 @@ fn init()->Result<(), Error>{
     data::init_db();
     data::player::init_player();
     events::init_events();
+    env_logger::init();
     Ok(())
 }

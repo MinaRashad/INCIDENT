@@ -47,7 +47,16 @@ pub struct Message{
 
 #[derive(Debug,Default)]
 pub struct ChatAppState{
-    pub current_selection:ListState,
+    pub current_chat_selection:ListState,
+    pub current_choice_selection:usize,
+    pub choices: Vec<Choice>,
     pub chat_scroll:usize,
     pub running:bool
+}
+
+
+#[derive(Debug, Default)]
+pub struct Choice {
+    pub text: String,           // display text
+    pub next_node: String,      // where this goes in dialogue tree
 }
