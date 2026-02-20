@@ -14,6 +14,8 @@ use log;
 use env_logger;
 use game_state::GameState;
 
+use crate::data::chat;
+
 struct CleanUp;
 
 impl Drop for CleanUp {
@@ -60,5 +62,9 @@ fn init()->Result<(), Error>{
     data::player::init_player();
     events::init_events();
     env_logger::init();
+
+    // TEMPORARY: spawn the chat
+    chat::spawn_chat_master();
+    
     Ok(())
 }

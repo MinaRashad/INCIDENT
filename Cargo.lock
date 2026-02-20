@@ -17,6 +17,7 @@ dependencies = [
  "rodio",
  "rusqlite",
  "serde",
+ "serde_json",
  "sha2",
  "strip-ansi-escapes",
  "terminal_size",
