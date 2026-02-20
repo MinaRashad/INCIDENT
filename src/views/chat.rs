@@ -38,11 +38,15 @@ pub fn start()->GameState{
     chat_app_state.choices = vec![
         Choice{
             text: "Yes of course".to_string(),
-            next_dialogue: "chat_1".to_string()
+            next_dialogue: "chat_1".to_string(),
+            conditions:vec![],
+            events:vec![]
     },
         Choice{
             text: "No, Fuck you".to_string(),
-            next_dialogue: "chat_2".to_string()
+            next_dialogue: "chat_2".to_string(),
+            conditions:vec![],
+            events:vec![]
         }];
 
     while chat_app_state.running {

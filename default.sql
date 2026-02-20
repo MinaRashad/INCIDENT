@@ -21,12 +21,13 @@ CREATE TABLE IF NOT EXISTS metadata_tags (
 CREATE TABLE IF NOT EXISTS player (
     id INTEGER PRIMARY KEY CHECK (id = 0), -- Ensure only one row exists
     name TEXT NOT NULL,
-    access_level INTEGER NOT NULL DEFAULT 0
+    access_level INTEGER NOT NULL DEFAULT 2
 );
 
 CREATE TABLE messages (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender      TEXT NOT NULL,      -- NPC name or "player"
+    sender      TEXT NOT NULL,
+    receiver    TEXT NOT NULL,
     content     TEXT NOT NULL,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 );

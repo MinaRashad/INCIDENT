@@ -1,3 +1,4 @@
+use log::error;
 use ratatui::widgets::ListState;
 
 use std::{
@@ -5,12 +6,12 @@ use std::{
     fs::File, 
     io::Error, 
     path::PathBuf, 
-    thread
+    thread, vec
 };
 
 use serde::{Deserialize, Serialize};
 use serde_json;
-use crate::menu_components;
+use crate::{data, menu_components};
 
 const CHATS_PATH: &str = "assets/Chat/dialogue.json";
 
@@ -71,9 +72,12 @@ pub struct ChatAppState{
 
 
 #[derive(Debug, Default,Deserialize, Serialize)]
+#[serde(default)]
 pub struct Choice {
     pub text: String,           // display text
     pub next_dialogue: String,      // where this goes in dialogue tree
+    pub conditions: Vec<String>,
+    pub events: Vec<String>
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -87,7 +91,19 @@ pub struct DialogueNode{
 }
 pub type DialogueTree =  HashMap<NPC, HashMap<String, DialogueNode>>;
 
+enum Contact_Char{
+    Player,
+    NPC(NPC)
+}
 
+impl Contact_Char{
+    fn to_string(&self) ->String{
+        match self {
+            Contact_Char::Player => "Player".to_string(),
+            Contact_Char::NPC(npc) => npc.name().to_string()          
+        }
+    }
+}
 
 pub fn spawn_chat_master(){
     thread::spawn(run_chat_master);
@@ -101,28 +117,88 @@ pub fn spawn_chat_master(){
 fn run_chat_master(){
     let chats = read_dialogue_data();
 
-    println!("Spawned the chat master!");
-    println!("The chat master says:");
-    match chats {
-        Ok(chats) => println!("{chats:?}"),
-        Err(err) => println!("{err}")       
-    }
+     // TEST: send a message from Marcus to Player
+    send_message(Contact_Char::NPC(NPC::Marcus), Contact_Char::Player, "Hey, this is a test message.".to_string());
+    println!("Sent a message from Marcus to Player");
 
-    menu_components::wait_for_input();
+    // TEST: send a message from Player to Marcus
+    send_message(Contact_Char::Player, Contact_Char::NPC(NPC::Marcus), "Got it, thanks Marcus.".to_string());
+    println!("Sent a message from Player to Marcus");
+
+    // TEST: check messages for Marcus (should see both)
+    let messages = check_messages(0, NPC::Marcus);
+    println!("Messages for Marcus ({} found):", messages.len());
+    for msg in &messages {
+        println!("  is_received: {} | content: {}", msg.is_recieved, msg.content);
+    }
 
 }
 
 fn read_dialogue_data()-> Result<DialogueTree, Error>{
 
     let chats_json_path = PathBuf::from(CHATS_PATH);
-    let chats_file = File::open(chats_json_path)?;    
+    let chats_file = File::open(chats_json_path)?; 
+
+    data::init_db();   
 
     // now we have the chat file, we just need to parse
     // it as JSON
 
     let json: DialogueTree = serde_json::from_reader(chats_file)?;
-
-
-
     Ok(json)
+}
+
+
+fn send_message(from: Contact_Char, to:Contact_Char, Message:String)
+
+{
+    let result = data::METADATA_DB.with(|db|{
+        let conn = db.get().expect("Database not initialized");
+
+        conn.execute(
+            "INSERT INTO messages (sender, receiver, content) VALUES (?1, ?2, ?3)", 
+            (from.to_string(), to.to_string(), Message))
+    });
+
+    if result.is_err(){
+        error!("Failed to send message")
+    }
+}
+
+fn check_messages(after: u32, npc:NPC) 
+-> Vec<Message>{
+    
+    let result  = data::METADATA_DB.with(
+        |db| 
+        -> Result<Vec<Message>, rusqlite::Error>{
+        let conn = db.get().expect("Database not initialized");
+
+        let mut statement = conn
+            .prepare("SELECT sender, receiver, content 
+            FROM
+            messages 
+            WHERE
+            created_at > ?1
+            AND
+            (sender = ?2 OR receiver = ?2)
+            ORDER BY created_at")
+            .expect("Unable to create SQL statement");
+        
+        let messages :Vec<Message> =
+            statement.query_map((after, npc.name()),
+            |row|    
+            Ok(Message{
+                is_recieved: row.get::<usize,String>(0)? == "Player".to_string(),
+                content: row.get::<usize,String>(2)?,
+            })
+        )?
+        .filter(|row| row.is_ok())
+        .map(|row| row.unwrap())
+        .collect();
+
+        Ok(messages)   
+    });
+
+    result.unwrap_or(vec![])
+
 }
