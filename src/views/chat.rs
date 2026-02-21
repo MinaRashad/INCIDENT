@@ -12,15 +12,21 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, List, ListItem, Paragraph, Wrap},
 };
 
+use std::sync::OnceLock;
 
 
-use crate::data::chat::Choice;
+
+use crate::data::{self, chat::{self, Choice, DialogueNode}};
 use crate::menu_components;
 use crate::GameState;
 use crate::sound;
 use crate::terminal;
 
 use crate::data::chat::{ChatAppState, NPC, ChatLog, Message};
+
+
+// load all chats in this thread
+static CHATS:OnceLock<data::chat::DialogueTree> = OnceLock::new();
 
 /// Entry point for the chat log viewer
 /// Waits for user input before returning to the Chats state
@@ -29,42 +35,41 @@ use crate::data::chat::{ChatAppState, NPC, ChatLog, Message};
 /// Always returns GameState::Chats
 pub fn start()->GameState{
 
+    init_chats();
     let mut terminal = ratatui::init();
     
     let mut chat_app_state: ChatAppState = ChatAppState::default();
     chat_app_state.current_chat_selection.select(Some(0));
     chat_app_state.current_choice_selection = 0;
     chat_app_state.running = true;
-    chat_app_state.choices = vec![
-        Choice{
-            text: "Yes of course".to_string(),
-            next_dialogue: "chat_1".to_string(),
-            conditions:vec![],
-            events:vec![]
-    },
-        Choice{
-            text: "No, Fuck you".to_string(),
-            next_dialogue: "chat_2".to_string(),
-            conditions:vec![],
-            events:vec![]
-        }];
+
+    update_chat(&mut chat_app_state);
+
+    println!("{:?}",chat_app_state.chatlog.messages);
+    menu_components::wait_for_input();
+    
 
     while chat_app_state.running {
+        // check new messages
+        update_chat(&mut chat_app_state);
+
         // render chat
         terminal.draw(|f| 
             render_chat(f, &mut chat_app_state))
             .expect("failed to draw a frame");
 
         // input logic is here
-        if poll(Duration::from_millis(500)).is_ok(){
+        if poll(Duration::from_millis(500)).unwrap_or(false){
             // input goes here
             match read() {
                 Ok(Event::Key(k))
                 if k.is_release() => handle_key_input(k, &mut chat_app_state),            
                 _ => {} // do nothing if anything else including error
             };
+
         }
 
+        update_chat(&mut chat_app_state);
 
     }
 
@@ -117,21 +122,10 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
         app_layout[0],
          chat_app_state);
 
-    let chat_log = ChatLog {
-        sender: NPC::Marcus,
-        messages: vec![Message {
-                is_recieved: true,
-                content: "Hey! How are you doing?".to_string(),
-            },
-            Message {
-                is_recieved: false,
-                content: "I'm good, thanks! How about you?".to_string(),
-            },],
-    };
 
 
     render_conversation(frame, conversation_layout[0],
-         chat_log, chat_app_state);
+        chat_app_state);
 
     render_choices(frame, conversation_layout[1], chat_app_state);
 }
@@ -154,9 +148,9 @@ fn render_chatlogs(frame: &mut Frame, chatlog_area:Rect,
 }
 
 fn render_conversation(frame: &mut Frame, 
-    conversation_area:Rect, chat_log: ChatLog, chat_app_state:&ChatAppState){
+    conversation_area:Rect, chat_app_state:&ChatAppState){
         
-    let msgs = chat_log.messages;
+    let msgs = &chat_app_state.chatlog.messages;
 
     let chat_bubble_width = conversation_area.width * 45 / 100;
     
@@ -184,12 +178,13 @@ fn render_conversation(frame: &mut Frame,
                                 .split(conversation_area);
 
     // iterate through messages to display bubbles
+    let npc = chat_app_state.chatlog.sender;
+
     for i in (start)..(start+visible_message_count)
     {
             let msg = &msgs[i];
             let content = &msg.content;
             let is_recieved = msg.is_recieved;
-            let npc = chat_log.sender;
 
             let message_bubble = Paragraph::new(content.to_text())
                         .centered()
@@ -270,6 +265,9 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
         {
             sound::play(sound::SoundCategory::GUIFeedback);
             chat_app_state.current_chat_selection.select_next();
+            chat_app_state.current_choice_selection = 0; // reset choice selection
+            chat_app_state.chat_scroll = 0; // reset scroll
+
         }
         else{
             chat_app_state.chat_scroll += 1
@@ -281,12 +279,18 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
         {
             sound::play(sound::SoundCategory::GUIFeedback);
             chat_app_state.current_chat_selection.select_previous();
+            chat_app_state.current_choice_selection = 0; // reset choice selection
+            chat_app_state.chat_scroll = 0; // reset scroll
+
         }
         else{
             chat_app_state.chat_scroll = (chat_app_state.chat_scroll.saturating_sub(1)).max(0)
         }
     },
     KeyCode::Left => {
+        if chat_app_state.choices.is_empty(){
+            return;
+        }
         let num_choices: usize = chat_app_state.choices.len();
 
         chat_app_state.current_choice_selection = 
@@ -299,12 +303,55 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
                 }
     },
     KeyCode::Right => {
+        if chat_app_state.choices.is_empty(){
+            return;
+        }
         let num_choices: usize = chat_app_state.choices.len();
         chat_app_state.current_choice_selection += 1;
         chat_app_state.current_choice_selection = chat_app_state.current_choice_selection % num_choices;
     },
+    KeyCode::Enter =>{
+        if chat_app_state.choices.is_empty(){
+            return;
+        }
+        let npc_idx = chat_app_state.current_chat_selection
+                    .selected()
+                    .unwrap_or(0);
+        let npc = NPC::ALL[npc_idx];
+        // we handle the choice selection
+        let choice_idx = chat_app_state.current_choice_selection;
+        
+        let choice = &chat_app_state.choices[choice_idx];
+        let mut dialogue_node = choice.to_dialogue_node();
+
+        data::chat::process_dialogue_node(&mut dialogue_node, 
+            chat::ContactChar::Player, 
+            chat::ContactChar::NPC(npc));
+    }
     _ => {}
     }
+}
+
+fn update_chat(chat_app_state:&mut ChatAppState)
+-> Option<()>
+{
+    // get current selected npc
+    let npcs = NPC::ALL;
+    let npc_idx = chat_app_state.current_chat_selection.selected()?;
+    let npc = npcs[npc_idx];
+
+    // get all messages
+    let messages = data::chat::get_messages(0, npc);
+    chat_app_state.chatlog = ChatLog{sender:npc, messages};
+
+    // we also need the current node
+    let map = CHATS.get()?;
+    let node = data::chat::get_current_dialogue_node(npc, map)?;
+
+    chat_app_state.choices = node.options.clone();
+    
+
+    Some(())
 }
 
 
@@ -516,4 +563,9 @@ fn parse_message_line(line: &str) -> Option<(String, String)> {
         }
     }
     None
+}
+
+fn init_chats()->Option<()>{
+    let map: data::chat::DialogueTree = data::chat::read_dialogue_data().ok()?;
+    CHATS.set(map).ok()
 }

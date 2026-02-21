@@ -20,13 +20,16 @@ use crate::{data, events::EventType, sound};
 const CHATS_PATH: &str = "assets/Chat/dialogue.json";
 
 /// Chatlog is the current seen chatlog
+#[derive(Debug, Default)]
 pub struct ChatLog{
     pub sender : NPC,
     pub messages : Vec<Message>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[derive(Default)]
 pub enum NPC {
+    #[default]
     Marcus,
     Sarah,
     Jessica,
@@ -69,13 +72,15 @@ pub struct Message{
 pub struct ChatAppState{
     pub current_chat_selection:ListState,
     pub current_choice_selection:usize,
+    pub chatlog:ChatLog,
     pub choices: Vec<Choice>,
     pub chat_scroll:usize,
-    pub running:bool
+    pub running:bool,
+
 }
 
 
-#[derive(Debug, Default,Deserialize, Serialize)]
+#[derive(Debug, Default,Deserialize, Serialize,Clone)]
 #[serde(default)]
 pub struct Choice {
     pub text: String,           // display text
@@ -84,19 +89,32 @@ pub struct Choice {
     pub events: Vec<String>
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+impl Choice {
+    pub fn to_dialogue_node(&self)->DialogueNode{
+        DialogueNode{
+            text:Some(self.text.clone()),
+            options:vec![],
+            conditions: vec![],
+            events: self.events.clone(),
+            next_dialogue:Some(self.next_dialogue.clone()),
+            state:DialogueNodeStatus::NotProcessed
+        }
+    }
+}
+
+#[derive(Debug, Default, Deserialize, Serialize, Clone)]
 #[serde(default)]
 pub struct DialogueNode{
     text: Option<String>,
-    options: Vec<Choice>,
-    conditions: Vec<String>,    // custom flags checked before allowing it
-    events: Vec<String>,         // custome flags emitted
-    next_dialogue:Option<String>, // key name of next node 
+    pub options: Vec<Choice>,
+    pub conditions: Vec<String>,    // custom flags checked before allowing it
+    pub events: Vec<String>,         // custome flags emitted
+    pub next_dialogue:Option<String>, // key name of next node 
     state: DialogueNodeStatus
 }
 
-#[derive(Default, Debug, Deserialize, Serialize, PartialEq)]
-enum DialogueNodeStatus{
+#[derive(Default, Debug, Deserialize, Serialize, PartialEq,Clone)]
+pub enum DialogueNodeStatus{
     #[default]
     NotProcessed,
     WaitingPlayerResponse
@@ -105,16 +123,16 @@ enum DialogueNodeStatus{
 
 pub type DialogueTree =  HashMap<NPC, HashMap<String, DialogueNode>>;
 
-enum Contact_Char{
+pub enum ContactChar{
     Player,
     NPC(NPC)
 }
 
-impl Contact_Char{
+impl ContactChar{
     fn to_string(&self) ->String{
         match self {
-            Contact_Char::Player => "Player".to_string(),
-            Contact_Char::NPC(npc) => npc.name().to_string()          
+            ContactChar::Player => "Player".to_string(),
+            ContactChar::NPC(npc) => npc.name().to_string()          
         }
     }
 }
@@ -129,8 +147,11 @@ pub fn spawn_chat_master(){
 /// - Checks if there are new conditions unlocked
 /// - If there is, checks all npcs current dialogue 
 fn run_chat_master(){
-
+    
     // initialization
+    
+    data::init_db();   
+
     let mut chats = read_dialogue_data()
                                 .expect("Failed to get a hashmap of the messages");
     let mut timestamp:u32 = 0;
@@ -194,7 +215,7 @@ fn run_chat_master(){
             
             // now we are graunteed that the node satesfied its conditions
             // and
-            process_dialogue_node(&mut dialogue_node, Contact_Char::NPC(npc), Contact_Char::Player);
+            process_dialogue_node(&mut dialogue_node, ContactChar::NPC(npc), ContactChar::Player);
 
         }
 
@@ -210,12 +231,11 @@ fn run_chat_master(){
 
 }
 
-fn read_dialogue_data()-> Result<DialogueTree, Error>{
+pub fn read_dialogue_data()-> Result<DialogueTree, Error>{
 
     let chats_json_path = PathBuf::from(CHATS_PATH);
     let chats_file = File::open(chats_json_path)?; 
 
-    data::init_db();   
 
     // now we have the chat file, we just need to parse
     // it as JSON
@@ -225,9 +245,8 @@ fn read_dialogue_data()-> Result<DialogueTree, Error>{
 }
 
 
-fn send_message(from: &Contact_Char, to: &Contact_Char, message:String)
+fn send_message(from: &ContactChar, to: &ContactChar, message:String)
 {
-    sound::play(sound::SoundCategory::GUIFeedback);
     let result = data::METADATA_DB.with(|db|{
         let conn = db.get().expect("Database not initialized");
 
@@ -264,7 +283,7 @@ pub fn get_messages(after: u32, from:NPC)
             statement.query_map((after, from.name()),
             |row|    
             Ok(Message{
-                is_recieved: row.get::<usize,String>(0)? == "Player".to_string(),
+                is_recieved: row.get::<usize,String>(0)? != "Player".to_string(),
                 content: row.get::<usize,String>(2)?,
             })
         )?
@@ -358,6 +377,17 @@ pub fn get_dialogue_state(npc: NPC) -> String {
     result.unwrap_or("start".to_string())
 }
 
+pub fn get_current_dialogue_node<'a>(npc:NPC, map:&'a DialogueTree)
+-> Option<&'a DialogueNode>
+{
+    let npc_state = get_dialogue_state(npc);
+
+    let dialogue_map = map.get(&npc)?;
+
+    let dialogue_node = dialogue_map.get(&npc_state)?;
+
+    Some(dialogue_node)
+}
 
 fn get_dialogue_map() -> HashMap<NPC, String>{
     let mut map: HashMap<NPC, String> = HashMap::new();
@@ -379,11 +409,11 @@ fn get_dialogue_map() -> HashMap<NPC, String>{
 /// # `process_dialogue_node`
 /// - Arguments
 ///     - node: mutable reference to the dialogue node
-///     - from: Contact_Char (either player or NPC)
-///     - to: Contact_Char (either player or NPC)
+///     - from: ContactChar (either player or NPC)
+///     - to: ContactChar (either player or NPC)
 /// 
 /// Ideally this function can also be used to indicate a choice has been made
-pub fn process_dialogue_node(node: &mut DialogueNode, from: Contact_Char, to:Contact_Char){
+pub fn process_dialogue_node(node: &mut DialogueNode, from: ContactChar, to:ContactChar){
 
     // first we send a message with the content of the node
     match &node.text {
@@ -397,9 +427,9 @@ pub fn process_dialogue_node(node: &mut DialogueNode, from: Contact_Char, to:Con
     }
 
     // lets find which contact is the NPC
-    let npc = if let Contact_Char::NPC(npc) = to {
+    let npc = if let ContactChar::NPC(npc) = to {
         npc
-    }else if let Contact_Char::NPC(npc) = from {
+    }else if let ContactChar::NPC(npc) = from {
         npc
     } else{
         // this should not happen because it would
