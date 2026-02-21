@@ -7,10 +7,25 @@ pub enum Effect{
     DecreaseClearance,
     SetClearance(u32)
 }
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum EventType {
-    OnChatWith(NPC),
-    OnPathOpen(PathBuf)
+    StartGame,
+    OnPathOpen(PathBuf),
+    OnDialogueNode(String),
+    OnDialogueChoice(String)
+}
+
+impl EventType {
+    pub fn from_str(s: &str) -> Self{
+    let parts: Vec<&str> = s.split(';').filter(|s| !s.is_empty()).collect();
+    match parts.as_slice() {
+            ["path", path] => EventType::OnPathOpen(PathBuf::from(path)),
+            ["dialogue", id] => EventType::OnDialogueNode(id.to_string()),
+            ["choose", id] => EventType::OnDialogueChoice(id.to_string()),
+            ["start"] => EventType::StartGame,
+            _ => panic!("Unparsable event type: {s}")
+        }
+    }
 }
 
 impl Effect {
@@ -24,7 +39,6 @@ impl Effect {
             ),
             Effect::SetClearance(clearance) => player::set_access_level(*clearance as i32),
         }
-
     }
 }
 
@@ -33,7 +47,6 @@ pub static ON_EVENT:OnceLock< HashMap<EventType, Effect> > = OnceLock::new() ;
 pub fn init_events() {
     let mut map = HashMap::new();
 
-    map.insert(EventType::OnChatWith(NPC::Rodriguez), Effect::IncreaseClearance);
 
     let _ = ON_EVENT.set(map);
 }

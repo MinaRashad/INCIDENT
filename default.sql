@@ -1,3 +1,4 @@
+PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS metadata (
     path TEXT PRIMARY KEY,
     access_level INTEGER,
@@ -37,14 +38,14 @@ CREATE TABLE npc_dialogue_state (
     node TEXT NOT NULL
 );
 
-CREATE TABLE conditions (
+CREATE TABLE history (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-
-
+-- add starting event to history
+INSERT INTO history (name) VALUES ('start');
 
 
 -- INSERT INTO metadata (path, access_level)
