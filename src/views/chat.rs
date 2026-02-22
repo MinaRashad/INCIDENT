@@ -16,7 +16,7 @@ use std::sync::OnceLock;
 
 
 
-use crate::data::{self, chat::{self, Choice, DialogueNode}};
+use crate::data::{self, chat::{self, Choice, DialogueNode, DialogueNodeStatus, get_node_status}};
 use crate::menu_components;
 use crate::GameState;
 use crate::sound;
@@ -42,11 +42,6 @@ pub fn start()->GameState{
     chat_app_state.current_chat_selection.select(Some(0));
     chat_app_state.current_choice_selection = 0;
     chat_app_state.running = true;
-
-    update_chat(&mut chat_app_state);
-
-    println!("{:?}",chat_app_state.chatlog.messages);
-    menu_components::wait_for_input();
     
 
     while chat_app_state.running {
@@ -99,7 +94,7 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
     let conversation_layout = Layout::vertical(
                         [
                             Constraint::Fill(1), // chat area
-                            Constraint::Length(3) // Choices
+                            Constraint::Length(5) // Choices
                     ]).split(app_layout[1]);
 
     let header = Paragraph::new("Whats'agram")
@@ -133,7 +128,8 @@ fn render_chat(frame: &mut Frame, chat_app_state:&mut ChatAppState){
 fn render_chatlogs(frame: &mut Frame, chatlog_area:Rect,
      chatlog_state:&mut ChatAppState){
     
-    let items: Vec<ListItem> = NPC::ALL.iter()
+    let items: Vec<ListItem> = data::chat::get_npc_names()
+                    .iter()
                     .map(|npc| format!("👤 {:?}", npc))
                     .map(|npc_name| 
                         ListItem::new(npc_name)
@@ -237,7 +233,8 @@ fn render_choices(frame: &mut Frame, choice_area:Rect,
         let choices_items:Vec<Paragraph> = choices.iter()
                     .map(|choice| choice.text.clone())
                     .map(|choice| Paragraph::new(choice)
-                            .block(Block::bordered()) 
+                            .block(Block::bordered())
+                            .wrap(Wrap { trim: false })
                     )
                     .enumerate()
                     .map(|(i, choice)|
@@ -256,7 +253,6 @@ fn render_choices(frame: &mut Frame, choice_area:Rect,
     }
 
 fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
-    sound::play(sound::SoundCategory::GUIFeedback);
     match k.code {
     KeyCode::Esc => chat_app_state.running=false,
     KeyCode::Down => {
@@ -270,6 +266,7 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
 
         }
         else{
+            sound::play(sound::SoundCategory::Scroll);
             chat_app_state.chat_scroll += 1
         }
 
@@ -284,6 +281,7 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
 
         }
         else{
+            sound::play(sound::SoundCategory::Scroll);
             chat_app_state.chat_scroll = (chat_app_state.chat_scroll.saturating_sub(1)).max(0)
         }
     },
@@ -314,12 +312,21 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
         if chat_app_state.choices.is_empty(){
             return;
         }
-        let npc_idx = chat_app_state.current_chat_selection
-                    .selected()
-                    .unwrap_or(0);
-        let npc = NPC::ALL[npc_idx];
+
+        let npc = current_npc(chat_app_state);
+        if npc.is_none(){
+            return;
+        }
+        let npc = npc.unwrap();
+        let npc_status = get_node_status(npc);
+        if npc_status != DialogueNodeStatus::WaitingPlayerResponse{
+            return;
+        }
         // we handle the choice selection
         let choice_idx = chat_app_state.current_choice_selection;
+        if choice_idx > chat_app_state.choices.len(){
+            return;
+        }
         
         let choice = &chat_app_state.choices[choice_idx];
         let mut dialogue_node = choice.to_dialogue_node();
@@ -335,25 +342,45 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
 fn update_chat(chat_app_state:&mut ChatAppState)
 -> Option<()>
 {
-    // get current selected npc
-    let npcs = NPC::ALL;
-    let npc_idx = chat_app_state.current_chat_selection.selected()?;
-    let npc = npcs[npc_idx];
+    let npc = current_npc(chat_app_state)?;
 
-    // get all messages
+    let initial_num_messages =  chat_app_state.chatlog.messages.len();
+
+    // get all messages and update scroll
     let messages = data::chat::get_messages(0, npc);
     chat_app_state.chatlog = ChatLog{sender:npc, messages};
 
+    let num_new_mesages = chat_app_state.chatlog.messages
+                    .len().saturating_sub(initial_num_messages);
+
+    if initial_num_messages > 3
+    {
+        chat_app_state.chat_scroll += num_new_mesages;
+    }
     // we also need the current node
     let map = CHATS.get()?;
-    let node = data::chat::get_current_dialogue_node(npc, map)?;
-
-    chat_app_state.choices = node.options.clone();
-    
+    let static_node = data::chat::get_current_dialogue_node(npc, map)?;
+    let npc_status = data::chat::get_node_status(npc);
+    // add choices if we are waiting for a response
+    if npc_status == DialogueNodeStatus::WaitingPlayerResponse{
+        chat_app_state.choices = static_node.options.clone();
+    }else{
+        chat_app_state.choices.clear();
+    }
 
     Some(())
 }
 
+fn current_npc(chat_app_state:&mut ChatAppState)->Option<NPC>{
+    // get current selected npc
+    let mut npcs = data::chat::get_npc_names();
+    let npc_idx = chat_app_state.current_chat_selection.selected()?;
+    if npc_idx >= npcs.len(){
+        return None;
+    }
+    let npc = npcs.swap_remove(npc_idx);
+    Some(NPC::from_str(npc))
+}
 
 // Static historical chats functions
 // not for dynamic use

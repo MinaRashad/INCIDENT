@@ -35,7 +35,8 @@ CREATE TABLE messages (
 
 CREATE TABLE npc_dialogue_state (
     npc_name TEXT PRIMARY KEY,
-    node TEXT NOT NULL
+    node TEXT NOT NULL,
+    status   TEXT NOT NULL DEFAULT 'not_processed'
 );
 
 CREATE TABLE history (

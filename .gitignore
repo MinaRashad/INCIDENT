@@ -2,5 +2,7 @@
 /assets
 /dev_helper
 
-main.db
+*.db
+*.db-wal
+*.db-shm
 .vscode

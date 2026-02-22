@@ -26,6 +26,10 @@ pub enum SoundCategory{
     Music,
     /// GUI interaction feedback sounds
     GUIFeedback,
+    /// Scroll feedback
+    Scroll,
+    /// message recieved
+    NewMessage,
     /// Success feedback
     Good,
     /// Failed feedback
@@ -49,7 +53,9 @@ impl SoundCategory {
             SoundCategory::Good => "good".to_string(),
             SoundCategory::Bad => "bad".to_string(),
             SoundCategory::AccessDenied => "access_denied".to_string(),
-            SoundCategory::AccessGranted => "access_granted".to_string()
+            SoundCategory::AccessGranted => "access_granted".to_string(),
+            SoundCategory::Scroll => "scroll".to_string(),
+            SoundCategory::NewMessage => "new_message".to_string()
         }
     }
 }

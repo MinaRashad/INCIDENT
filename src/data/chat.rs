@@ -60,6 +60,21 @@ impl NPC{
             NPC::Jennifer => "Jennifer",
         }
     }
+    pub fn from_str(s: String) -> NPC {
+        match s.as_str() {
+            "Marcus" => NPC::Marcus,
+            "Sarah" => NPC::Sarah,
+            "Jessica" => NPC::Jessica,
+            "David" => NPC::David,
+            "Mike" => NPC::Mike,
+            "Rodriguez" => NPC::Rodriguez,
+            "Elizabeth" => NPC::Elizabeth,
+            "Robert" => NPC::Robert,
+            "Susan" => NPC::Susan,
+            "Jennifer" => NPC::Jennifer,
+            _ => panic!("Unknown NPC"),
+        }
+    }
 }
 
 #[derive(Debug, Default,Deserialize, Serialize)]
@@ -110,14 +125,33 @@ pub struct DialogueNode{
     pub conditions: Vec<String>,    // custom flags checked before allowing it
     pub events: Vec<String>,         // custome flags emitted
     pub next_dialogue:Option<String>, // key name of next node 
-    state: DialogueNodeStatus
+    pub state: DialogueNodeStatus
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, PartialEq,Clone)]
 pub enum DialogueNodeStatus{
     #[default]
     NotProcessed,
-    WaitingPlayerResponse
+    WaitingPlayerResponse,
+    Processed
+}
+
+impl DialogueNodeStatus {
+    fn as_str(&self) -> &str {
+        match self {
+            DialogueNodeStatus::NotProcessed => "not_processed",
+            DialogueNodeStatus::WaitingPlayerResponse => "waiting_player",
+            DialogueNodeStatus::Processed => "processed",
+        }
+    }
+
+    fn from_str(s: &str) -> Self {
+        match s {
+            "waiting_player" => DialogueNodeStatus::WaitingPlayerResponse,
+            "processed" => DialogueNodeStatus::Processed,
+            _ => DialogueNodeStatus::NotProcessed,
+        }
+    }
 }
 
 
@@ -186,23 +220,25 @@ fn run_chat_master(){
                      _ => continue};
             
 
-            let dialogue_map = match chats.get_mut(&npc) {
+            let dialogue_map = match chats.get(&npc) {
                 Some(map)=> map,
                 None => continue
             };
 
-            let mut dialogue_node = match dialogue_map.get_mut(node_name) {
+            let dialogue_node = match dialogue_map.get(node_name) {
                 Some(node)=> node,
                 None => continue
             };
 
-            if dialogue_node.state == DialogueNodeStatus::WaitingPlayerResponse {
+            let state = get_node_status(npc);
+
+            // if it is not processed continue
+            if state != DialogueNodeStatus::NotProcessed {
                 continue;
             }
 
-            // the dialogue node needs processing 
-            // if we arrived here
-
+            
+            
             // first make sure the conditions are satesfied before we continue
             let mut valid_to_process = true;
             for condition in &dialogue_node.conditions{
@@ -215,7 +251,10 @@ fn run_chat_master(){
             
             // now we are graunteed that the node satesfied its conditions
             // and
-            process_dialogue_node(&mut dialogue_node, ContactChar::NPC(npc), ContactChar::Player);
+            // first mark it as processed
+            set_node_status(npc, DialogueNodeStatus::Processed);
+
+            process_dialogue_node(dialogue_node, ContactChar::NPC(npc), ContactChar::Player);
 
         }
 
@@ -231,6 +270,10 @@ fn run_chat_master(){
 
 }
 
+
+/// # `read_dialogue_state`
+/// A function that reads the chats JSON and returns 
+/// The dialogue tree
 pub fn read_dialogue_data()-> Result<DialogueTree, Error>{
 
     let chats_json_path = PathBuf::from(CHATS_PATH);
@@ -244,7 +287,8 @@ pub fn read_dialogue_data()-> Result<DialogueTree, Error>{
     Ok(json)
 }
 
-
+/// Private chat master function
+/// Sends a message from a character to another
 fn send_message(from: &ContactChar, to: &ContactChar, message:String)
 {
     let result = data::METADATA_DB.with(|db|{
@@ -260,6 +304,8 @@ fn send_message(from: &ContactChar, to: &ContactChar, message:String)
     }
 }
 
+/// a public function to get messages from
+/// an NPC after some specified time stamp
 pub fn get_messages(after: u32, from:NPC) 
 -> Vec<Message>{
     
@@ -296,6 +342,40 @@ pub fn get_messages(after: u32, from:NPC)
 
     result.unwrap_or(vec![])
 
+}
+
+/// a get function to get the current npcs
+pub fn get_npc_names() -> Vec<String>{
+    
+    let result  = data::METADATA_DB.with(
+        |db| 
+        -> Result<Vec<String>, rusqlite::Error>{
+
+        let conn = db.get().expect("Database not initialized");
+
+        let mut statement = conn
+            .prepare("SELECT sender
+            FROM
+            messages 
+            WHERE
+            SENDER != 'Player'
+            GROUP BY SENDER")
+            .expect("Unable to create SQL statement");
+        
+        let npcs :Vec<String> =
+            statement.query_map((),
+            |row|    
+            row.get::<usize,String>(0)
+        )?
+        .filter(|row| row.is_ok())
+        .map(|row| row.unwrap())
+        .map(|name| name.trim_matches('"').to_string())
+        .collect();
+
+        Ok(npcs)   
+    });
+
+    result.unwrap_or(vec![])
 }
 
 pub fn add_event(event_tag:String){
@@ -349,13 +429,14 @@ pub fn set_dialogue_state(npc: NPC, node: String) {
         let conn = db.get().expect("Database not initialized");
 
         conn.execute(
-            "INSERT INTO npc_dialogue_state (npc_name, node) VALUES (?1, ?2)
-             ON CONFLICT(npc_name) DO UPDATE SET node = excluded.node",
-            (npc.name(), node))
+            "INSERT INTO npc_dialogue_state (npc_name, node, status) VALUES (?1, ?2, 'not_processed')
+             ON CONFLICT(npc_name) DO UPDATE SET node = excluded.node, status = 'not_processed'",
+            (npc.name(), node),
+        )
     });
 
     if result.is_err() {
-        error!("Failed to set dialogue state")
+        error!("Failed to set dialogue state");
     }
 }
 
@@ -377,6 +458,45 @@ pub fn get_dialogue_state(npc: NPC) -> String {
     result.unwrap_or("start".to_string())
 }
 
+pub fn set_node_status(npc: NPC, status: DialogueNodeStatus) {
+    let result = data::METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+
+        conn.execute(
+            "UPDATE npc_dialogue_state SET status = ?1 WHERE npc_name = ?2",
+            (status.as_str(), npc.name()),
+        )
+    });
+
+    if result.is_err() {
+        error!("Failed to set node status");
+    }
+}
+
+pub fn get_node_status(npc: NPC) -> DialogueNodeStatus {
+    let result = data::METADATA_DB
+    .with(|db| 
+        -> Result<String, rusqlite::Error> {
+        let conn = db.get().expect("Database not initialized");
+
+        let mut statement = conn
+            .prepare("SELECT status FROM npc_dialogue_state WHERE npc_name = ?1")
+            .expect("Unable to create SQL statement");
+
+        statement.query_row((npc.name(),), 
+            |row| row.get::<_, String>(0))
+    });
+
+
+    match result {
+        Ok(s) => DialogueNodeStatus::from_str(&s),
+        Err(_) => DialogueNodeStatus::NotProcessed,
+    }
+}
+/// # `get_current_dialogue_node`
+/// Returns a static node from the dialogue map tree
+/// This faster than querying the database as the map is
+/// used will be `CHATS` which is loaded in memory
 pub fn get_current_dialogue_node<'a>(npc:NPC, map:&'a DialogueTree)
 -> Option<&'a DialogueNode>
 {
@@ -395,7 +515,10 @@ fn get_dialogue_map() -> HashMap<NPC, String>{
         let curr_node = get_dialogue_state(npc);
 
         // if its start, save it just in case
-        if curr_node == "start".to_string(){
+        let state = get_node_status(npc);
+        if curr_node == "start".to_string() &&
+        state == DialogueNodeStatus::NotProcessed
+        {
             set_dialogue_state(npc, curr_node.clone());
         }
 
@@ -413,7 +536,7 @@ fn get_dialogue_map() -> HashMap<NPC, String>{
 ///     - to: ContactChar (either player or NPC)
 /// 
 /// Ideally this function can also be used to indicate a choice has been made
-pub fn process_dialogue_node(node: &mut DialogueNode, from: ContactChar, to:ContactChar){
+pub fn process_dialogue_node(node: &DialogueNode, from: ContactChar, to:ContactChar){
 
     // first we send a message with the content of the node
     match &node.text {
@@ -443,7 +566,11 @@ pub fn process_dialogue_node(node: &mut DialogueNode, from: ContactChar, to:Cont
     }
     // if we dont have a next node, set the node to be waiting for choices
     else {
-        node.state = DialogueNodeStatus::WaitingPlayerResponse;
+        // presistent data
+        set_node_status(npc, DialogueNodeStatus::WaitingPlayerResponse);
+
+        // runtime should be no longer needed
+        // node.state = DialogueNodeStatus::WaitingPlayerResponse;
     }
 
     
