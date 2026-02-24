@@ -368,8 +368,7 @@ pub fn get_npc_names() -> Vec<String>{
             row.get::<usize,String>(0)
         )?
         .filter(|row| row.is_ok())
-        .map(|row| row.unwrap())
-        .map(|name| name.trim_matches('"').to_string())
+        .map(|row: Result<String, rusqlite::Error>| row.unwrap())
         .collect();
 
         Ok(npcs)   

@@ -130,7 +130,7 @@ fn render_chatlogs(frame: &mut Frame, chatlog_area:Rect,
     
     let items: Vec<ListItem> = data::chat::get_npc_names()
                     .iter()
-                    .map(|npc| format!("👤 {:?}", npc))
+                    .map(|npc| format!("👤 {}", npc))
                     .map(|npc_name| 
                         ListItem::new(npc_name)
                         
