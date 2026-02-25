@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS metadata_tags (
 CREATE TABLE IF NOT EXISTS player (
     id INTEGER PRIMARY KEY CHECK (id = 0), -- Ensure only one row exists
     name TEXT NOT NULL,
-    access_level INTEGER NOT NULL DEFAULT 2
+    access_level INTEGER NOT NULL DEFAULT 2,
+    hired INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE messages (
@@ -42,7 +43,8 @@ CREATE TABLE npc_dialogue_state (
 CREATE TABLE history (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL,
-    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    processed_at DATETIME DEFAULT NULL
 );
 
 -- add starting event to history

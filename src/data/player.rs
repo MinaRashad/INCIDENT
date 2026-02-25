@@ -1,13 +1,6 @@
-
 use whoami;
 
 use crate::data::METADATA_DB;
-
-#[derive(Clone, Debug)]
-pub struct Player{
-    name:String,
-    access_level:usize
-}
 
 
 pub fn init_player(){
@@ -64,4 +57,42 @@ pub fn get_player_name() -> Option<String> {
             |row| row.get(0),
         ).ok()
     })
+}
+
+pub fn hire(){
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Unable to get db connection");
+        conn.execute(
+            "UPDATE player SET hired = 1 WHERE id = 0",
+            [],
+        ).expect("Failed to hire player");
+    });
+}
+
+pub fn fire(){
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Unable to get db connection");
+        conn.execute(
+            "UPDATE player SET hired = 0 WHERE id = 0",
+            [],
+        ).expect("Failed to fire player");
+    });
+}
+
+
+pub fn is_hired() -> bool{
+    let hired = METADATA_DB.with(|db| 
+        -> Option<i32>{
+        let conn = db.get().expect("Unable to get db connection");
+        conn.query_row(
+            "SELECT hired FROM player WHERE id = 0",
+            [],
+            |row| row.get(0),
+        ).ok()
+    });
+    if let Some(val) = hired && val != 0{
+        return true;
+    }else{
+        return false;
+    }
 }

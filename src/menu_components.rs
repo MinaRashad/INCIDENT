@@ -18,7 +18,7 @@ use sha2::digest::crypto_common::Key;
 
 
 use crate::data::{self, ImageDoc};
-use crate::terminal;
+use crate::terminal::{self, drain_input};
 use crate::sound;
 use crate::game_state::GameState;
 
@@ -302,7 +302,7 @@ pub fn wait_for_input() -> Option<()> {
     let sub = terminal::center(sub);
     let sub = terminal::blink(sub);
     println!("{}",sub);
-
+    drain_input();
     loop{
         if let Event::Key(k) = read().ok()?{
             if 
@@ -326,7 +326,7 @@ pub fn wait_for_scroll(){
     let sub = terminal::blink(sub);
     println!("{}",sub);
 
-
+    drain_input();
     loop {
         let input: KeyCode = terminal::get_input();
 

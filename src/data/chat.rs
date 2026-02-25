@@ -16,6 +16,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 use serde_json;
 use crate::{data, events::EventType, sound};
+use crate::events::{add_event, get_history};
+
 
 const CHATS_PATH: &str = "assets/Chat/dialogue.json";
 
@@ -377,51 +379,7 @@ pub fn get_npc_names() -> Vec<String>{
     result.unwrap_or(vec![])
 }
 
-pub fn add_event(event_tag:String){
-    let result = data::METADATA_DB.with(|db|{
-        let conn = db.get().expect("Database not initialized");
 
-        conn.execute(
-            "INSERT INTO history (name) VALUES (?1)", 
-            (event_tag,))
-    });
-
-    if result.is_err(){
-        error!("Failed to send message")
-    }
-}
-
-fn get_history(after: u32)
--> Vec<EventType>
-{
-    let result  = data::METADATA_DB.with(
-        |db| 
-        -> Result<Vec<EventType>, rusqlite::Error>{
-        let conn = db.get().expect("Database not initialized");
-
-        let mut statement = conn
-            .prepare("SELECT name 
-            FROM
-            history 
-            WHERE
-            created_at > ?1
-            ORDER BY created_at")
-            .expect("Unable to create SQL statement");
-        
-        let events :Vec<EventType> =
-            statement.query_map((after,),
-            |row|    
-            Ok(EventType::from_str(row.get::<usize,String>(0)?.as_str()))
-        )?
-        .filter(|row| row.is_ok())
-        .map(|row| row.unwrap())
-        .collect();
-
-        Ok(events)   
-    });
-
-    result.unwrap_or(vec![])
-}
 
 pub fn set_dialogue_state(npc: NPC, node: String) {
     let result = data::METADATA_DB.with(|db| {

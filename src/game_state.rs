@@ -5,6 +5,9 @@ use crate::views;
 use crate::windows;
 use crate::terminal;
 
+
+pub mod endings;
+
 /// Represents all possible states/screens in the game
 /// Each state corresponds to a different view or action
 /// States can carry data (like file paths) needed for that view
@@ -44,6 +47,10 @@ pub enum GameState{
     // Chat states
     /// Chat log viewer
     Chats,
+
+
+    /// Ending
+    Ending(endings::Ending)
 }
 
 impl GameState {
@@ -75,6 +82,7 @@ impl GameState {
             GameState::PasswordProtected(path) => format!("{}*", 
                                             GameState::OpenPath(path.to_path_buf())
                                                                 .as_name()),
+            GameState::Ending(ending) => "Ending".to_string()
 
         }
     }
@@ -108,6 +116,7 @@ impl GameState {
                     },
                     GameState::Unauthorized(path)=> views::unauthorized_access(path),
                     GameState::PasswordProtected(path) => views::password_access(path),
+                    GameState::Ending(ending) => endings::show_ending(ending), 
                     
                 }
     }

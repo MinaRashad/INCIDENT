@@ -14,7 +14,7 @@ use log;
 use env_logger;
 use game_state::GameState;
 
-use crate::data::chat;
+use crate::{data::chat, game_state::endings::Ending};
 
 struct CleanUp;
 
@@ -29,7 +29,7 @@ impl Drop for CleanUp {
 
 fn main() {
     let _guard = CleanUp;
-    let mut state = GameState::TitleScreen;
+    let mut state = GameState::Ending(Ending::DepressedEnding);//GameState::TitleScreen;
 
     let args :Vec<String>= env::args().collect();
     println!("{args:?}");
