@@ -1,5 +1,6 @@
+use crate::game_state::endings::Ending;
 use crate::{data::player, game_state::endings};
-use crate::data;
+use crate::{data, menu_components};
 use env_logger::fmt::Timestamp;
 use log::error;
 
@@ -15,7 +16,7 @@ pub enum Effect{
     SetClearance(u32),
     Hire,
     Fire,
-    End
+    End(endings::Ending)
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -23,18 +24,28 @@ pub enum EventType {
     StartGame,
     OnPathOpen(PathBuf),
     OnDialogueNode(String),
-    OnDialogueChoice(String)
+    OnDialogueChoice(String),
+    EndGame(Ending)
 }
 
 impl EventType {
     pub fn from_str(s: &str) -> Self{
-    let parts: Vec<&str> = s.split(';').filter(|s| !s.is_empty()).collect();
-    match parts.as_slice() {
-            ["path", path] => EventType::OnPathOpen(PathBuf::from(path)),
-            ["dialogue", id] => EventType::OnDialogueNode(id.to_string()),
-            ["choose", id] => EventType::OnDialogueChoice(id.to_string()),
-            ["start"] => EventType::StartGame,
-            _ => panic!("Unparsable event type: {s}")
+        let parts: Vec<&str> = s.split(';').filter(|s| !s.is_empty()).collect();
+        match parts.as_slice() {
+                ["path", path] => EventType::OnPathOpen(PathBuf::from(path)),
+                ["dialogue", id] => EventType::OnDialogueNode(id.to_string()),
+                ["choose", id] => EventType::OnDialogueChoice(id.to_string()),
+                ["start"] => EventType::StartGame,
+                _ => panic!("Unparsable event type: {s}")
+            }
+    }
+    pub fn to_str(&self) -> String {
+        match self {
+            EventType::OnPathOpen(path) => format!(";path;{};", path.display()),
+            EventType::OnDialogueNode(id) => format!(";dialogue;{id};"),
+            EventType::OnDialogueChoice(id) => format!(";choose;{id};"),
+            EventType::StartGame => ";start;".to_string(),
+            EventType::EndGame(ending) => todo!()
         }
     }
 }
@@ -51,19 +62,23 @@ impl Effect {
             Effect::SetClearance(clearance) => player::set_access_level(*clearance as i32),
             Effect::Hire => player::hire(),
             Effect::Fire => player::fire(),
-            Effect::End => endings::end()
+            Effect::End(ending) => {
+                endings::end(ending.clone())
+            }
         }
     }
 }
 
-pub static ON_EVENT:OnceLock< HashMap<EventType, Effect> > = OnceLock::new() ;
-
 /// in-memory static data for the effects
-pub fn init_events() {
-    let mut map = HashMap::new();
+pub fn init_events()
+-> HashMap<EventType, Effect> 
+{
+    let mut map : HashMap<EventType, Effect> = HashMap::new();
 
+    map.insert(EventType::OnDialogueChoice("declined".to_string()),
+     Effect::End(Ending::DepressedEnding));
 
-    let _ = ON_EVENT.set(map);
+    return map;
 }
 
 
@@ -101,15 +116,15 @@ pub fn get_history(after: u32)
 }
 
 fn get_unprocessed_history()
--> Vec<EventType>
+-> Vec<(i32,EventType)>
 {
     let result  = data::METADATA_DB.with(
         |db| 
-        -> Result<Vec<EventType>, rusqlite::Error>{
+        -> Result<Vec<(i32,EventType)>, rusqlite::Error>{
         let conn = db.get().expect("Database not initialized");
 
         let mut statement = conn
-            .prepare("SELECT name 
+            .prepare("SELECT id,name 
             FROM
             history 
             WHERE
@@ -117,10 +132,14 @@ fn get_unprocessed_history()
             ORDER BY created_at")
             .expect("Unable to create SQL statement");
         
-        let events :Vec<EventType> =
+        let events :Vec<(i32,EventType)> =
             statement.query_map([],
             |row|    
-            Ok(EventType::from_str(row.get::<usize,String>(0)?.as_str()))
+            Ok(
+                (
+                row.get::<usize,i32>(0)?,
+                EventType::from_str(row.get::<usize,String>(1)?.as_str()))
+                )
         )?
         .filter(|row| row.is_ok())
         .map(|row| row.unwrap())
@@ -133,7 +152,7 @@ fn get_unprocessed_history()
 }
 
 fn process_event(id:i64) -> Result<(), rusqlite::Error>{
-    let result = data::METADATA_DB.with(|db|{
+    let _ = data::METADATA_DB.with(|db|{
         let conn = db.get().expect("Database not initialized");
         let timestamp = std::time::SystemTime::now();
         let timestamp = timestamp
@@ -145,7 +164,7 @@ fn process_event(id:i64) -> Result<(), rusqlite::Error>{
         conn.execute(
             "UPDATE history (processed_at) VALUES (?1) WHERE id=?2", 
             (timestamp as i64, id))
-    });
+    })?;
 
     Ok(())
 }
@@ -171,17 +190,25 @@ pub fn spawn_all_seeing_eye(){
     std::thread::spawn(run_event_master);
 }
 
-fn run_event_master(){
+fn run_event_master()->Option<()>{
+    
+    data::init_db();
+    let event_map = init_events();
     loop {
         // get the un processed history
+        let unprocessed = get_unprocessed_history();
 
         // loop through it
+        for (id,event) in unprocessed{            
+            // process each event
 
-        // process each event
-
-        // mark as processed
-
-
+            if let Some(effect) = event_map.get(&event){
+                effect.activate();
+            }
+            
+            // mark as processed
+            let _ = process_event(id as i64);
+        }
 
         std::thread::sleep(Duration::from_secs(1));       
     }

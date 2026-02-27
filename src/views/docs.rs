@@ -92,16 +92,10 @@ pub fn open_path(path:PathBuf) -> GameState{
         // mark metadata to open
         update_metadata(&entry, MetadataField::Opened(true));
 
-        // check and activate effects ON_OPEN
-        let map = events::ON_EVENT.get()
-                    .expect("Unable to retrieve the effect map");
         let event = EventType::OnPathOpen(path.clone());
-        if let Some(effect) = map.get(
-                    &event
-                ){  
-                    effect.activate();
-                } 
-
+        
+        // add to events
+        events::add_event(event.to_str());
     };
 
     

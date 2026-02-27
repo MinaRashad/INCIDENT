@@ -2,7 +2,7 @@ use crate::game_state::GameState;
 use crate::terminal;
 use crate::menu_components;
 // Ending
-#[derive(Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Ending{
     DepressedEnding
 }
@@ -32,11 +32,10 @@ pub fn show_ending(ending: Ending)
             println!();
             
             let text = "You turned down Marcus's offer.\n\
-                        It seemed like the safe choice at the time.\n\n\
-                        Three weeks later:\n\
-                        'Marcus Chen found dead - Case closed as suicide'\n\n\
-                        You never found out why.\n\
-                        Some mysteries are never solved.";
+                        You wondered many times what your life\n\
+                        will look like had you accepted the offer\n\
+                        However, regretting the past does not matter\n\
+                        All we have is only the present.";
             
             let text = terminal::center_multiline(text.to_string());
             let text = terminal::faint(text);
@@ -54,6 +53,6 @@ pub fn show_ending(ending: Ending)
 }
 
 
-pub fn end(){
-    std::process::exit(0)
+pub fn end(ending:Ending){
+    show_ending(ending);
 }

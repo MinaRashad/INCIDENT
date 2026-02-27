@@ -60,11 +60,11 @@ fn init()->Result<(), Error>{
     sound::init()?;
     data::init_db();
     data::player::init_player();
-    events::init_events();
     env_logger::init();
 
     // TEMPORARY: spawn the chat
     chat::spawn_chat_master();
+    events::spawn_all_seeing_eye();
     
     Ok(())
 }

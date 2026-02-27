@@ -188,7 +188,7 @@ fn run_chat_master(){
     
     data::init_db();   
 
-    let mut chats = read_dialogue_data()
+    let chats = read_dialogue_data()
                                 .expect("Failed to get a hashmap of the messages");
     let mut timestamp:u32 = 0;
 
@@ -234,8 +234,9 @@ fn run_chat_master(){
 
             let state = get_node_status(npc);
 
-            // if it is not processed continue
-            if state != DialogueNodeStatus::NotProcessed {
+            // Only continue if the node is not processed yet
+            if state == DialogueNodeStatus::Processed ||
+               state == DialogueNodeStatus::WaitingPlayerResponse {
                 continue;
             }
 
@@ -462,6 +463,8 @@ pub fn get_current_dialogue_node<'a>(npc:NPC, map:&'a DialogueTree)
     let dialogue_map = map.get(&npc)?;
 
     let dialogue_node = dialogue_map.get(&npc_state)?;
+
+    // TODO: Filter choices based on history
 
     Some(dialogue_node)
 }
