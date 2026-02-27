@@ -1,6 +1,6 @@
 /target
 /assets
-/dev_helper
+/dev_helper/Inky_windows_64
 
 *.db
 *.db-wal

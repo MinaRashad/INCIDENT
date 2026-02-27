@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>INCIDENT // Dialogue Editor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0a0f;color:#c8c8d4;font-family:'JetBrains Mono',monospace;height:100vh;overflow:hidden;display:grid;grid-template-rows:56px 1fr;grid-template-columns:260px 1fr 300px;}
+
+/* TOPBAR */
+#topbar{grid-column:1/-1;background:#0f0f1a;border-bottom:1px solid #1e1e30;display:flex;align-items:center;padding:0 20px;gap:10px;}
+#topbar-title{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff;letter-spacing:.05em;text-transform:uppercase;margin-right:6px;}
+#topbar-path{font-size:11px;color:#3a3a5a;margin-left:auto;}
+.tbtn{background:#1a1a2e;border:1px solid #2a2a45;color:#8888aa;font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 12px;cursor:pointer;transition:all .15s;}
+.tbtn:hover{background:#22223a;color:#c8c8d4;border-color:#4a4a70;}
+.tbtn.primary{background:#2a1f5a;border-color:#5a3faa;color:#aa88ff;}
+.tbtn.primary:hover{background:#3a2f7a;color:#cc99ff;}
+.tbtn.danger{background:#2a1a1a;border-color:#5a2a2a;color:#ff7777;}
+.tbtn.danger:hover{background:#3a2a2a;}
+
+/* SIDEBAR */
+#sidebar{background:#0c0c18;border-right:1px solid #1e1e30;overflow-y:auto;display:flex;flex-direction:column;}
+.sec-label{padding:12px 16px 6px;font-size:10px;color:#3a3a5a;text-transform:uppercase;letter-spacing:.12em;}
+.char-item{padding:8px 16px;cursor:pointer;font-size:12px;color:#6868a8;border-left:2px solid transparent;transition:all .1s;display:flex;align-items:center;gap:8px;}
+.char-item:hover{color:#c8c8d4;background:#111120;}
+.char-item.active{color:#aa88ff;border-left-color:#aa88ff;background:#12122a;}
+.char-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.node-item{padding:5px 16px 5px 30px;cursor:pointer;font-size:11px;color:#4a4a6a;transition:all .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid transparent;}
+.node-item:hover{color:#9898c8;background:#111120;}
+.node-item.active{color:#88aaff;border-left-color:#5577ff;background:#10101e;}
+.node-item.terminal{color:#3a3a5a;font-style:italic;}
+
+/* MAIN */
+#main{overflow-y:auto;background:#0a0a0f;padding:24px;}
+#empty{display:flex;align-items:center;justify-content:center;height:100%;color:#2a2a4a;font-size:13px;flex-direction:column;gap:8px;}
+#empty span:first-child{font-size:40px;}
+.node-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.node-id{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#fff;}
+.badge{font-size:10px;padding:2px 8px;text-transform:uppercase;letter-spacing:.08em;}
+.badge-start{background:#1a2a1a;color:#66cc66;border:1px solid #2a4a2a;}
+.badge-end{background:#2a1a1a;color:#cc6666;border:1px solid #4a2a2a;}
+.badge-cond{background:#1a1a3a;color:#6677ff;border:1px solid #2a2a5a;}
+.field-group{margin-bottom:18px;}
+.field-label{font-size:10px;color:#4a4a6a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.field-label::after{content:'';flex:1;height:1px;background:#1e1e30;}
+textarea,input[type=text],select{width:100%;background:#0f0f1a;border:1px solid #1e1e30;color:#c8c8d4;font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 10px;outline:none;transition:border-color .15s;}
+textarea{resize:vertical;line-height:1.6;}
+textarea:focus,input[type=text]:focus,select:focus{border-color:#3a3a6a;}
+select option{background:#0f0f1a;}
+
+/* TAG INPUT */
+.tag-wrap{display:flex;flex-wrap:wrap;gap:4px;background:#0a0a12;border:1px solid #1e1e30;padding:6px 8px;min-height:34px;align-items:center;cursor:text;}
+.tag-wrap:focus-within{border-color:#3a3a6a;}
+.tag{background:#1a1a35;border:1px solid #2a2a55;color:#8888cc;font-size:10px;padding:2px 6px;display:inline-flex;align-items:center;gap:4px;}
+.tag.event{background:#1a2a1a;border-color:#2a4a2a;color:#66cc88;}
+.tag-x{cursor:pointer;background:none;border:none;color:#5a5a8a;font-size:13px;line-height:1;padding:0;font-family:monospace;}
+.tag-x:hover{color:#ff7777;}
+.tag-tinput{background:none;border:none;outline:none;color:#c8c8d4;font-family:'JetBrains Mono',monospace;font-size:11px;min-width:80px;flex:1;padding:0;}
+
+/* OPTIONS */
+.opt-card{background:#0f0f1a;border:1px solid #1e1e30;margin-bottom:10px;}
+.opt-head{display:flex;align-items:center;padding:7px 12px;background:#111120;border-bottom:1px solid #1e1e2a;gap:8px;}
+.opt-idx{font-size:10px;color:#4a4a6a;min-width:20px;}
+.opt-preview{font-size:11px;color:#5a5a8a;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.opt-body{padding:12px;display:grid;gap:8px;}
+.opt-row{display:grid;grid-template-columns:88px 1fr;align-items:start;gap:8px;}
+.opt-lbl{font-size:10px;color:#4a4a6a;padding-top:10px;}
+.sbtn{background:#1a1a2e;border:1px solid #2a2a45;color:#8888aa;font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;cursor:pointer;transition:all .15s;}
+.sbtn:hover{background:#22223a;color:#c8c8d4;}
+.sbtn.add{color:#66cc88;border-color:#2a4a3a;}
+.sbtn.add:hover{background:#1a2a22;}
+.sbtn.del{color:#cc6666;border-color:#4a2a2a;}
+.sbtn.del:hover{background:#2a1a1a;}
+
+/* INSPECTOR */
+#inspector{background:#0c0c18;border-left:1px solid #1e1e30;overflow-y:auto;padding:16px;}
+.ins-title{font-size:10px;color:#3a3a5a;text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px;}
+.stat-row{display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid #141420;color:#4a4a6a;}
+.stat-row span:last-child{color:#8888aa;}
+.graph-box{background:#0a0a12;border:1px solid #1a1a2e;padding:10px;margin-bottom:14px;}
+.graph-lbl{font-size:10px;color:#3a3a5a;margin-bottom:5px;}
+.graph-node{font-size:10px;padding:4px 8px;margin-bottom:2px;border-left:2px solid #2a2a4a;color:#5a5a8a;cursor:pointer;transition:all .1s;display:flex;justify-content:space-between;}
+.graph-node:hover{color:#9898c8;border-left-color:#5566ff;}
+.none-note{font-size:10px;color:#2a2a4a;font-style:italic;}
+
+/* MODAL */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);align-items:center;justify-content:center;z-index:100;}
+#modal-overlay.show{display:flex;}
+#modal{background:#0f0f1a;border:1px solid #2a2a45;padding:24px;width:380px;max-width:90vw;}
+#modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#fff;margin-bottom:14px;}
+#modal-body{margin-bottom:16px;}
+#modal-footer{display:flex;gap:8px;justify-content:flex-end;}
+
+/* TOAST */
+#toast{display:none;position:fixed;bottom:20px;right:20px;background:#1a2a1a;border:1px solid #2a4a2a;color:#66cc88;font-family:'JetBrains Mono',monospace;font-size:12px;padding:10px 16px;z-index:200;animation:slideIn .2s ease;}
+@keyframes slideIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* GRAPH MODE */
+#graph-view{display:none;position:fixed;inset:56px 0 0 0;background:#07070e;z-index:50;flex-direction:column;}
+#graph-view.show{display:flex;}
+#graph-canvas{flex:1;cursor:grab;display:block;}
+#graph-canvas.grabbing{cursor:grabbing;}
+#graph-legend{position:absolute;bottom:16px;left:16px;background:#0f0f1a;border:1px solid #1e1e30;padding:10px 14px;font-size:10px;color:#4a4a6a;display:flex;gap:16px;pointer-events:none;}
+#graph-legend span{display:flex;align-items:center;gap:6px;}
+#graph-legend i{display:inline-block;width:12px;height:2px;}
+.leg-normal{background:#2a2a55;}
+.leg-auto{background:#3a5a3a;}
+#graph-controls{position:absolute;bottom:16px;right:16px;display:flex;gap:6px;}
+
+/* SEARCH PANEL */
+#search-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;align-items:flex-start;justify-content:center;padding-top:80px;}
+#search-overlay.show{display:flex;}
+#search-panel{background:#0f0f1a;border:1px solid #2a2a45;width:560px;max-width:92vw;max-height:70vh;display:flex;flex-direction:column;}
+#search-header{padding:14px 16px;border-bottom:1px solid #1e1e30;display:flex;align-items:center;gap:10px;}
+#search-input{flex:1;background:none;border:none;outline:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:14px;}
+#search-input::placeholder{color:#3a3a5a;}
+#search-mode{display:flex;gap:6px;}
+.smode-btn{background:#1a1a2e;border:1px solid #2a2a45;color:#5a5a8a;font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;transition:all .1s;}
+.smode-btn.active{background:#2a1f5a;border-color:#5a3faa;color:#aa88ff;}
+#search-results{overflow-y:auto;flex:1;}
+.sr-item{padding:10px 16px;border-bottom:1px solid #111120;cursor:pointer;transition:background .1s;}
+.sr-item:hover{background:#111120;}
+.sr-char{font-size:10px;color:#4a4a6a;margin-bottom:2px;}
+.sr-node{font-size:12px;color:#88aaff;margin-bottom:4px;}
+.sr-match{font-size:11px;color:#5a5a8a;line-height:1.5;}
+.sr-match mark{background:#2a2a1a;color:#ffcc66;font-style:normal;padding:0 2px;}
+.sr-tag{display:inline-block;font-size:10px;padding:1px 6px;margin-right:3px;}
+.sr-tag.cond{background:#1a1a35;border:1px solid #2a2a55;color:#8888cc;}
+.sr-tag.evt{background:#1a2a1a;border:1px solid #2a4a2a;color:#66cc88;}
+#search-empty{padding:32px;text-align:center;color:#3a3a5a;font-size:12px;}
+#search-hint{padding:6px 16px;font-size:10px;color:#2a2a4a;border-top:1px solid #1a1a2a;display:flex;justify-content:space-between;}
+
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#2a2a45;border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <span id="topbar-title">Incident // Dialogue Editor</span>
+  <div style="width:1px;height:20px;background:#1e1e30;margin:0 4px;"></div>
+  <button class="tbtn" onclick="openModal('newChar')">+ Character</button>
+  <button class="tbtn" id="btn-new-node" onclick="openModal('newNode')" style="display:none">+ Node</button>
+  <button class="tbtn danger" id="btn-del-node" onclick="openModal('deleteNode')" style="display:none">Delete Node</button>
+  <button class="tbtn" id="btn-graph" onclick="toggleGraph()">Graph</button>
+  <button class="tbtn" onclick="openSearch()" title="Ctrl+K">Search</button>
+  <button class="tbtn primary" onclick="exportJSON()">Export JSON</button>
+  <button class="tbtn" onclick="document.getElementById('file-input').click()">Import JSON</button>
+  <input type="file" id="file-input" accept=".json" style="display:none" onchange="importJSON(event)"/>
+  <span id="topbar-path">no selection</span>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sec-label">Characters</div>
+  <div id="char-list"></div>
+  <div class="sec-label" id="nodes-label" style="display:none;margin-top:8px;">Nodes</div>
+  <div id="node-list"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="empty"><span>◻</span><span>Select a node to edit</span></div>
+  <div id="editor" style="display:none"></div>
+</div>
+
+<!-- INSPECTOR -->
+<div id="inspector">
+  <div class="ins-title">Inspector</div>
+  <div id="inspector-content"></div>
+</div>
+
+<!-- SEARCH -->
+<div id="search-overlay" onclick="closeSearch()">
+  <div id="search-panel" onclick="event.stopPropagation()">
+    <div id="search-header">
+      <span style="font-size:13px;color:#3a3a5a">⌕</span>
+      <input id="search-input" placeholder="Search nodes, text, flags..." oninput="runSearch()" onkeydown="searchKeydown(event)" autocomplete="off"/>
+      <div id="search-mode">
+        <button class="smode-btn active" id="mode-all" onclick="setMode('all')">All</button>
+        <button class="smode-btn" id="mode-flag" onclick="setMode('flag')">Flags</button>
+        <button class="smode-btn" id="mode-text" onclick="setMode('text')">Text</button>
+        <button class="smode-btn" id="mode-node" onclick="setMode('node')">Nodes</button>
+      </div>
+    </div>
+    <div id="search-results"><div id="search-empty">Type to search across all characters and nodes</div></div>
+    <div id="search-hint"><span>↑↓ navigate</span><span>Enter to jump</span><span>Esc close</span></div>
+  </div>
+</div>
+
+<!-- GRAPH VIEW -->
+<div id="graph-view">
+  <canvas id="graph-canvas"></canvas>
+  <div id="graph-legend">
+    <span><i class="leg-normal" style="height:2px;display:inline-block;width:20px;background:#2a2a55;border-radius:1px"></i> option</span>
+    <span><i style="height:2px;display:inline-block;width:20px;background:#3a5a3a;border-radius:1px"></i> auto</span>
+    <span><i style="width:10px;height:10px;border-radius:50%;background:#2a3a55;border:1px solid #4455aa;display:inline-block"></i> node</span>
+    <span><i style="width:10px;height:10px;border-radius:50%;background:#1a3a1a;border:1px solid #44aa55;display:inline-block"></i> entry</span>
+    <span><i style="width:10px;height:10px;border-radius:50%;background:#2a1a1a;border:1px solid #aa4444;display:inline-block"></i> terminal</span>
+  </div>
+  <div id="graph-controls">
+    <button class="tbtn" onclick="graphFitAll()">Fit</button>
+    <button class="tbtn" onclick="graphZoom(1.2)">+</button>
+    <button class="tbtn" onclick="graphZoom(0.8)">−</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeModal()">
+  <div id="modal" onclick="event.stopPropagation()">
+    <div id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div id="modal-footer">
+      <button class="tbtn" onclick="closeModal()">Cancel</button>
+      <button class="tbtn primary" id="modal-confirm" onclick="modalConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let data = {};
+let selChar = null;
+let selNode = null;
+let modalType = null;
+let graphOpen = false;
+let gNodes = {}, gPan = { x: 0, y: 0 }, gScale = 1;
+let gDragging = false, gDragStart = { x: 0, y: 0 }, gPanStart = { x: 0, y: 0 };
+let gHover = null;
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+const SAMPLE = {"Marcus":{"start":{"text":"Yo! Dude, finally got through to you. Been trying to reach you all week","options":[{"text":"Yeah sorry man, been dealing with some stuff. What's up?","next_dialogue":"whats_up","conditions":[],"events":[]},{"text":"I know, I know. Things have been rough lately","next_dialogue":"things_rough","conditions":[],"events":[]}],"conditions":[],"events":[],"next_dialogue":null},"whats_up":{"text":"Listen, I know things haven't been easy since you lost your job. But I think I finally got something for you","options":[{"text":"Marcus, you don't have to keep doing this...","next_dialogue":"dont_have_to","conditions":[],"events":[]},{"text":"For real? What is it?","next_dialogue":"the_opportunity","conditions":[],"events":[]}],"conditions":[],"events":[],"next_dialogue":null},"things_rough":{"text":"I know man, I know. That's actually why I'm calling.","options":[{"text":"You've been doing too much for me already dude","next_dialogue":"dont_have_to","conditions":[],"events":[]},{"text":"Yeah? Tell me more","next_dialogue":"the_opportunity","conditions":[],"events":[]}],"conditions":[],"events":[],"next_dialogue":null},"dont_have_to":{"text":"Bro, shut up. You were there for me after my divorce.","options":[{"text":"Alright alright, what is it?","next_dialogue":"the_opportunity","conditions":[],"events":[]},{"text":"I appreciate it man, really. But I don't want charity","next_dialogue":"not_charity","conditions":[],"events":[]}],"conditions":[],"events":[],"next_dialogue":null},"not_charity":{"text":"It's not charity, it's a real job.","options":[{"text":"Fine, fine. What's the job?","next_dialogue":"the_opportunity","conditions":[],"events":[]}],"conditions":[],"events":[],"next_dialogue":null},"the_opportunity":{"text":"So, there's this detective I know. Rodriguez. They need someone to help with their digital evidence systems.","options":[{"text":"Wait, like working for the police?","next_dialogue":"convinced","conditions":[],"events":[]},{"text":"That actually sounds cool.","next_dialogue":"convinced","conditions":[],"events":[]},{"text":"I don't know man, that sounds intense","next_dialogue":"convinced","conditions":[],"events":[]}],"conditions":[],"events":[],"next_dialogue":null},"convinced":{"text":"YES! Okay cool, I'll text Rodriguez right now.","options":[{"text":"Sounds good. Thanks again Marcus, seriously","next_dialogue":"end","conditions":[],"events":["choose;accept_job"]},{"text":"What should I expect from him?","next_dialogue":"end","conditions":[],"events":["choose;accept_job"]}],"conditions":[],"events":[],"next_dialogue":null},"end":{"text":"Later dude. Take care of yourself","options":[],"conditions":[],"events":[],"next_dialogue":null}}};
+
+data = SAMPLE;
+selChar = "Marcus";
+selNode = "start";
+renderAll();
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderSidebar();
+  renderEditor();
+  renderInspector();
+  updateTopbar();
+  if (graphOpen) { buildGraph(); drawGraph(); }
+}
+
+function renderSidebar() {
+  const charList = document.getElementById('char-list');
+  charList.innerHTML = '';
+  Object.keys(data).forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'char-item' + (c === selChar ? ' active' : '');
+    d.innerHTML = `<span class="char-dot"></span>${c}`;
+    d.onclick = () => { selChar = c; selNode = Object.keys(data[c])[0]; renderAll(); };
+    charList.appendChild(d);
+  });
+
+  const nodeLabel = document.getElementById('nodes-label');
+  const nodeList = document.getElementById('node-list');
+  nodeList.innerHTML = '';
+  if (selChar && data[selChar]) {
+    nodeLabel.style.display = '';
+    Object.keys(data[selChar]).forEach(n => {
+      const node = data[selChar][n];
+      const isTerminal = node.options.length === 0 && !node.next_dialogue;
+      const d = document.createElement('div');
+      d.className = 'node-item' + (n === selNode ? ' active' : '') + (isTerminal ? ' terminal' : '');
+      d.textContent = (n === 'start' ? '▶ ' : '') + n;
+      d.onclick = () => { selNode = n; renderAll(); };
+      nodeList.appendChild(d);
+    });
+  } else {
+    nodeLabel.style.display = 'none';
+  }
+}
+
+function updateTopbar() {
+  document.getElementById('topbar-path').textContent = selChar && selNode ? `${selChar} / ${selNode}` : 'no selection';
+  document.getElementById('btn-new-node').style.display = selChar ? '' : 'none';
+  document.getElementById('btn-del-node').style.display = (selNode && selNode !== 'start') ? '' : 'none';
+}
+
+function renderEditor() {
+  const empty = document.getElementById('empty');
+  const editor = document.getElementById('editor');
+  if (!selChar || !selNode || !data[selChar]?.[selNode]) {
+    empty.style.display = 'flex'; editor.style.display = 'none'; return;
+  }
+  empty.style.display = 'none'; editor.style.display = 'block';
+  const node = data[selChar][selNode];
+  const allNodes = Object.keys(data[selChar]);
+  const isTerminal = node.options.length === 0 && !node.next_dialogue;
+
+  let badges = '';
+  if (selNode === 'start') badges += '<span class="badge badge-start">entry</span>';
+  if (isTerminal) badges += '<span class="badge badge-end">terminal</span>';
+  if (node.conditions.length) badges += '<span class="badge badge-cond">conditional</span>';
+
+  const nodeOptions = allNodes.filter(n => n !== selNode).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+
+  let optionsHTML = node.options.map((opt, i) => `
+    <div class="opt-card" id="opt-${i}">
+      <div class="opt-head">
+        <span class="opt-idx">#${i+1}</span>
+        <span class="opt-preview">${esc(opt.text)}</span>
+        <button class="sbtn del" onclick="removeOption(${i})">Remove</button>
+      </div>
+      <div class="opt-body">
+        <div class="opt-row">
+          <span class="opt-lbl">Player text</span>
+          <input type="text" value="${esc(opt.text)}" oninput="updateOption(${i},'text',this.value)"/>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">Next node</span>
+          <select onchange="updateOption(${i},'next_dialogue',this.value)">
+            <option value="">-- select --</option>
+            ${allNodes.map(n => `<option value="${esc(n)}" ${opt.next_dialogue===n?'selected':''}>${esc(n)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">Conditions</span>
+          ${renderTagInput(`opt-cond-${i}`, opt.conditions, false, i, 'conditions')}
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">Events</span>
+          ${renderTagInput(`opt-evt-${i}`, opt.events, true, i, 'events')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  editor.innerHTML = `
+    <div class="node-header">
+      <span class="node-id">${esc(selNode)}</span>
+      ${badges}
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">NPC Text</div>
+      <textarea rows="3" oninput="updateNodeField('text',this.value)" placeholder="What does the character say?">${esc(node.text||'')}</textarea>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Node Conditions</div>
+      ${renderTagInput('node-cond', node.conditions, false, null, null)}
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Node Events</div>
+      ${renderTagInput('node-evt', node.events, true, null, null)}
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Auto Next</div>
+      <select onchange="updateNodeField('next_dialogue',this.value||null)">
+        <option value="">-- none (use options) --</option>
+        ${allNodes.map(n=>`<option value="${esc(n)}" ${node.next_dialogue===n?'selected':''}>${esc(n)}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        Options
+        <button class="sbtn add" style="margin-left:8px" onclick="addOption()">+ Add</button>
+      </div>
+      ${node.options.length===0 ? '<div style="font-size:11px;color:#3a3a5a;padding:12px;background:#0a0a12;border:1px solid #1a1a2a">No options — terminal node.</div>' : optionsHTML}
+    </div>
+  `;
+
+  // attach tag input listeners after render
+  attachTagInput('node-cond', null, 'conditions');
+  attachTagInput('node-evt', null, 'events');
+  node.options.forEach((_, i) => {
+    attachTagInput(`opt-cond-${i}`, i, 'conditions');
+    attachTagInput(`opt-evt-${i}`, i, 'events');
+  });
+}
+
+function renderTagInput(id, tags, isEvent, optIdx, field) {
+  const tagsHTML = tags.map((t,ti) =>
+    `<span class="tag ${isEvent?'event':''}">${esc(t)}<button class="tag-x" data-ti="${ti}">×</button></span>`
+  ).join('');
+  return `<div class="tag-wrap" id="wrap-${id}">${tagsHTML}<input class="tag-tinput" id="tinput-${id}" placeholder="${tags.length?'':'Add flag...'}" autocomplete="off"/></div>`;
+}
+
+function attachTagInput(id, optIdx, field) {
+  const wrap = document.getElementById('wrap-'+id);
+  const input = document.getElementById('tinput-'+id);
+  if (!wrap || !input) return;
+
+  wrap.onclick = () => input.focus();
+
+  wrap.querySelectorAll('.tag-x').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const ti = parseInt(btn.dataset.ti);
+      if (optIdx !== null) {
+        data[selChar][selNode].options[optIdx][field].splice(ti, 1);
+      } else {
+        data[selChar][selNode][field].splice(ti, 1);
+      }
+      renderAll();
+    };
+  });
+
+  input.onkeydown = (e) => {
+    const val = input.value.trim();
+    if ((e.key === 'Enter' || e.key === ',') && val) {
+      e.preventDefault();
+      if (optIdx !== null) {
+        if (!data[selChar][selNode].options[optIdx][field].includes(val))
+          data[selChar][selNode].options[optIdx][field].push(val);
+      } else {
+        if (!data[selChar][selNode][field].includes(val))
+          data[selChar][selNode][field].push(val);
+      }
+      renderAll();
+    }
+    if (e.key === 'Backspace' && !input.value) {
+      const arr = optIdx !== null ? data[selChar][selNode].options[optIdx][field] : data[selChar][selNode][field];
+      if (arr.length) { arr.pop(); renderAll(); }
+    }
+  };
+}
+
+function renderInspector() {
+  const el = document.getElementById('inspector-content');
+  if (!selChar) { el.innerHTML = ''; return; }
+
+  const nodes = Object.keys(data[selChar]);
+  const totalOpts = nodes.reduce((a,n) => a + data[selChar][n].options.length, 0);
+  const terminals = nodes.filter(n => data[selChar][n].options.length===0 && !data[selChar][n].next_dialogue).length;
+  const conds = nodes.reduce((a,n) => a + data[selChar][n].conditions.length, 0);
+
+  let statsHTML = `
+    <div style="font-size:11px;color:#6666aa;margin-bottom:8px;font-family:'Syne',sans-serif;font-weight:700">${esc(selChar)}</div>
+    <div style="margin-bottom:14px">
+      <div class="stat-row"><span>Nodes</span><span>${nodes.length}</span></div>
+      <div class="stat-row"><span>Total options</span><span>${totalOpts}</span></div>
+      <div class="stat-row"><span>Terminal nodes</span><span>${terminals}</span></div>
+      <div class="stat-row"><span>Conditions</span><span>${conds}</span></div>
+    </div>
+  `;
+
+  let connHTML = '';
+  if (selNode && data[selChar]?.[selNode]) {
+    const node = data[selChar][selNode];
+    const incoming = nodes.filter(n =>
+      data[selChar][n].options.some(o => o.next_dialogue === selNode) ||
+      data[selChar][n].next_dialogue === selNode
+    );
+    const outgoing = [
+      ...(node.next_dialogue ? [{ label: node.next_dialogue, note: 'auto' }] : []),
+      ...node.options.map(o => ({ label: o.next_dialogue || '?', note: '' }))
+    ];
+
+    connHTML = `
+      <div class="ins-title" style="margin-top:4px">Connections</div>
+      <div class="graph-box">
+        <div class="graph-lbl">Incoming</div>
+        ${incoming.length ? incoming.map(n => `<div class="graph-node" onclick="selNode='${esc(n)}';renderAll()">${esc(n)} <span style="color:#3a3a5a">→</span></div>`).join('') : '<div class="none-note">none</div>'}
+        <div class="graph-lbl" style="margin-top:8px">Outgoing</div>
+        ${outgoing.length ? outgoing.map(o => `<div class="graph-node" onclick="if('${esc(o.label)}'!='?')selNode='${esc(o.label)}';renderAll()">${esc(o.label)} <span style="color:#3a3a5a;font-size:9px">${o.note}</span></div>`).join('') : '<div class="none-note">terminal</div>'}
+      </div>
+    `;
+
+    const allFlags = [...node.conditions, ...node.options.flatMap(o=>o.conditions)].filter((v,i,a)=>a.indexOf(v)===i);
+    const allEvents = [...node.events, ...node.options.flatMap(o=>o.events)].filter((v,i,a)=>a.indexOf(v)===i);
+
+    if (allFlags.length) connHTML += `
+      <div class="ins-title">Required Flags</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px">${allFlags.map(f=>`<span class="tag">${esc(f)}</span>`).join('')}</div>
+    `;
+    if (allEvents.length) connHTML += `
+      <div class="ins-title">Emitted Flags</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${allEvents.map(f=>`<span class="tag event">${esc(f)}</span>`).join('')}</div>
+    `;
+  }
+
+  el.innerHTML = statsHTML + connHTML;
+}
+
+// ── Data mutations ───────────────────────────────────────────────────────────
+function updateNodeField(field, value) {
+  data[selChar][selNode][field] = value;
+  if (field !== 'text') {
+    renderSidebar(); renderInspector(); updateTopbar();
+  }
+}
+
+function updateOption(i, field, value) {
+  data[selChar][selNode].options[i][field] = value;
+  if (field === 'text') {
+    const preview = document.querySelector('#opt-' + i + ' .opt-preview');
+    if (preview) preview.textContent = value;
+  } else {
+    renderEditor(); renderInspector();
+  }
+}
+
+function addOption() {
+  data[selChar][selNode].options.push({ text: "New option", next_dialogue: "end", conditions: [], events: [] });
+  renderAll();
+}
+
+function removeOption(i) {
+  data[selChar][selNode].options.splice(i, 1);
+  renderAll();
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function openModal(type) {
+  modalType = type;
+  const overlay = document.getElementById('modal-overlay');
+  const title = document.getElementById('modal-title');
+  const body = document.getElementById('modal-body');
+  const confirm = document.getElementById('modal-confirm');
+
+  if (type === 'newChar') {
+    title.textContent = 'New Character';
+    body.innerHTML = '<input type="text" id="modal-input" placeholder="Character name" autofocus/>';
+    confirm.textContent = 'Create';
+    confirm.className = 'tbtn primary';
+  } else if (type === 'newNode') {
+    title.textContent = `New Node — ${selChar}`;
+    body.innerHTML = '<input type="text" id="modal-input" placeholder="node_id (no spaces)" autofocus/>';
+    confirm.textContent = 'Create';
+    confirm.className = 'tbtn primary';
+  } else if (type === 'deleteNode') {
+    title.textContent = `Delete "${selNode}"?`;
+    body.innerHTML = '<div style="font-size:12px;color:#6a6a8a">This cannot be undone. Other nodes pointing here will have broken links.</div>';
+    confirm.textContent = 'Delete';
+    confirm.className = 'tbtn danger';
+  }
+
+  overlay.classList.add('show');
+  setTimeout(() => document.getElementById('modal-input')?.focus(), 50);
+
+  if (type !== 'deleteNode') {
+    document.getElementById('modal-input').onkeydown = e => { if (e.key==='Enter') modalConfirm(); };
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  modalType = null;
+}
+
+function modalConfirm() {
+  if (modalType === 'newChar') {
+    const name = document.getElementById('modal-input').value.trim();
+    if (!name || data[name]) return;
+    data[name] = { start: { text: "", options: [], conditions: [], events: [], next_dialogue: null } };
+    selChar = name; selNode = 'start';
+    showToast('Created character ' + name);
+  } else if (modalType === 'newNode') {
+    const name = document.getElementById('modal-input').value.trim().replace(/\s+/g,'_');
+    if (!name || data[selChar]?.[name]) return;
+    data[selChar][name] = { text: "", options: [], conditions: [], events: [], next_dialogue: null };
+    selNode = name;
+    showToast('Created node ' + name);
+  } else if (modalType === 'deleteNode') {
+    delete data[selChar][selNode];
+    selNode = 'start';
+    showToast('Deleted node');
+  }
+  closeModal();
+  renderAll();
+}
+
+// ── Import / Export ──────────────────────────────────────────────────────────
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'dialogue.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported dialogue.json');
+}
+
+function importJSON(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      data = parsed;
+      selChar = Object.keys(parsed)[0];
+      selNode = Object.keys(parsed[selChar])[0];
+      renderAll();
+      showToast('Imported ' + file.name);
+    } catch { showToast('Invalid JSON'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── Search ───────────────────────────────────────────────────────────────────
+let searchMode = 'all';
+let searchResults = [];
+let searchCursor = -1;
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+  if (e.key === 'Escape' && document.getElementById('search-overlay').classList.contains('show')) closeSearch();
+});
+
+function openSearch() {
+  document.getElementById('search-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('search-input').focus(), 30);
+  runSearch();
+}
+
+function closeSearch() {
+  document.getElementById('search-overlay').classList.remove('show');
+  searchCursor = -1;
+}
+
+function setMode(m) {
+  searchMode = m;
+  ['all','flag','text','node'].forEach(x => document.getElementById('mode-'+x).classList.toggle('active', x===m));
+  runSearch();
+}
+
+function searchKeydown(e) {
+  if (e.key === 'ArrowDown') { e.preventDefault(); searchCursor = Math.min(searchCursor+1, searchResults.length-1); highlightCursor(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); searchCursor = Math.max(searchCursor-1, 0); highlightCursor(); }
+  else if (e.key === 'Enter' && searchCursor >= 0) { jumpToResult(searchResults[searchCursor]); }
+  else if (e.key === 'Enter' && searchResults.length === 1) { jumpToResult(searchResults[0]); }
+}
+
+function highlightCursor() {
+  document.querySelectorAll('.sr-item').forEach((el,i) => el.classList.toggle('active-result', i===searchCursor));
+  const active = document.querySelectorAll('.sr-item')[searchCursor];
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+
+function jumpToResult(r) {
+  selChar = r.char; selNode = r.node;
+  closeSearch();
+  renderAll();
+}
+
+function highlight(str, q) {
+  if (!q) return esc(str);
+  const safe = esc(str);
+  const safeQ = esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return safe.replace(new RegExp(safeQ, 'gi'), m => `<mark>${m}</mark>`);
+}
+
+function runSearch() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const resultsEl = document.getElementById('search-results');
+  searchResults = [];
+  searchCursor = -1;
+
+  if (!q) {
+    resultsEl.innerHTML = '<div id="search-empty">Type to search across all characters and nodes</div>';
+    return;
+  }
+
+  Object.keys(data).forEach(char => {
+    Object.keys(data[char]).forEach(node => {
+      const n = data[char][node];
+      const allFlags = [...n.conditions, ...n.options.flatMap(o=>o.conditions)];
+      const allEvents = [...n.events, ...n.options.flatMap(o=>o.events)];
+      const allText = [n.text||'', ...n.options.map(o=>o.text)].join(' ');
+      const matches = [];
+
+      const modeOk = (type) => searchMode === 'all' || searchMode === type;
+
+      if (modeOk('node') && node.toLowerCase().includes(q))
+        matches.push({ type:'node', label: node });
+
+      if (modeOk('text') && allText.toLowerCase().includes(q))
+        matches.push({ type:'text', label: (n.text||'').substring(0,80) || n.options.find(o=>o.text.toLowerCase().includes(q))?.text?.substring(0,80) });
+
+      if (modeOk('flag')) {
+        const matchedConds = allFlags.filter(f=>f.toLowerCase().includes(q));
+        const matchedEvts = allEvents.filter(f=>f.toLowerCase().includes(q));
+        if (matchedConds.length) matches.push({ type:'cond', flags: matchedConds });
+        if (matchedEvts.length) matches.push({ type:'evt', flags: matchedEvts });
+      }
+
+      if (matches.length) searchResults.push({ char, node, matches });
+    });
+  });
+
+  if (!searchResults.length) {
+    resultsEl.innerHTML = `<div id="search-empty">No results for "<strong style="color:#c8c8d4">${esc(q)}</strong>"</div>`;
+    return;
+  }
+
+  resultsEl.innerHTML = searchResults.map((r, ri) => {
+    const matchHTML = r.matches.map(m => {
+      if (m.type === 'node') return `<span class="sr-match">node id: <mark>${esc(r.node)}</mark></span>`;
+      if (m.type === 'text') return `<span class="sr-match">${highlight(m.label, q)}${m.label.length>=80?'…':''}</span>`;
+      if (m.type === 'cond') return `<span class="sr-match">requires: ${m.flags.map(f=>`<span class="sr-tag cond">${highlight(f,q)}</span>`).join('')}</span>`;
+      if (m.type === 'evt') return `<span class="sr-match">emits: ${m.flags.map(f=>`<span class="sr-tag evt">${highlight(f,q)}</span>`).join('')}</span>`;
+    }).join('<br/>');
+
+    return `<div class="sr-item" onclick="jumpToResult(searchResults[${ri}])">
+      <div class="sr-char">${esc(r.char)}</div>
+      <div class="sr-node">${esc(r.node)}</div>
+      ${matchHTML}
+    </div>`;
+  }).join('');
+}
+
+// ── Graph View ───────────────────────────────────────────────────────────────
+const NODE_W = 160, NODE_H = 48, H_GAP = 60, V_GAP = 36;
+
+function toggleGraph() {
+  graphOpen = !graphOpen;
+  document.getElementById('graph-view').classList.toggle('show', graphOpen);
+  document.getElementById('btn-graph').classList.toggle('primary', graphOpen);
+  if (graphOpen) { buildGraph(); graphFitAll(); drawGraph(); }
+}
+
+function buildGraph() {
+  if (!selChar || !data[selChar]) return;
+  const nodes = data[selChar];
+  const ids = Object.keys(nodes);
+
+  // Layered layout: BFS from 'start'
+  const layers = {};
+  const visited = new Set();
+  const queue = [{ id: 'start', layer: 0 }];
+  while (queue.length) {
+    const { id, layer } = queue.shift();
+    if (visited.has(id)) continue;
+    visited.add(id);
+    if (!layers[layer]) layers[layer] = [];
+    layers[layer].push(id);
+    const n = nodes[id];
+    if (!n) continue;
+    const nexts = [
+      ...(n.next_dialogue ? [n.next_dialogue] : []),
+      ...n.options.map(o => o.next_dialogue).filter(Boolean)
+    ];
+    nexts.forEach(nid => { if (!visited.has(nid)) queue.push({ id: nid, layer: layer + 1 }); });
+  }
+  // Any orphan nodes not reachable from start
+  ids.forEach(id => {
+    if (!visited.has(id)) {
+      const maxLayer = Math.max(0, ...Object.keys(layers).map(Number)) + 1;
+      if (!layers[maxLayer]) layers[maxLayer] = [];
+      layers[maxLayer].push(id);
+    }
+  });
+
+  gNodes = {};
+  Object.keys(layers).forEach(layer => {
+    const col = parseInt(layer);
+    const items = layers[layer];
+    items.forEach((id, row) => {
+      const n = nodes[id];
+      const isTerminal = n && n.options.length === 0 && !n.next_dialogue;
+      gNodes[id] = {
+        id,
+        x: col * (NODE_W + H_GAP),
+        y: row * (NODE_H + V_GAP),
+        w: NODE_W,
+        h: NODE_H,
+        isStart: id === 'start',
+        isTerminal,
+        hasCond: n && n.conditions.length > 0
+      };
+    });
+  });
+}
+
+function graphFitAll() {
+  const canvas = document.getElementById('graph-canvas');
+  if (!Object.keys(gNodes).length) return;
+  const xs = Object.values(gNodes).map(n => n.x);
+  const ys = Object.values(gNodes).map(n => n.y);
+  const minX = Math.min(...xs) - 40;
+  const minY = Math.min(...ys) - 40;
+  const maxX = Math.max(...xs) + NODE_W + 40;
+  const maxY = Math.max(...ys) + NODE_H + 40;
+  const W = canvas.width, H = canvas.height;
+  const scaleX = W / (maxX - minX);
+  const scaleY = H / (maxY - minY);
+  gScale = Math.min(scaleX, scaleY, 1.5);
+  gPan.x = (W - (maxX - minX) * gScale) / 2 - minX * gScale;
+  gPan.y = (H - (maxY - minY) * gScale) / 2 - minY * gScale;
+  drawGraph();
+}
+
+function graphZoom(factor) {
+  const canvas = document.getElementById('graph-canvas');
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  gScale *= factor;
+  gPan.x = cx - (cx - gPan.x) * factor;
+  gPan.y = cy - (cy - gPan.y) * factor;
+  drawGraph();
+}
+
+function drawGraph() {
+  const canvas = document.getElementById('graph-canvas');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!selChar || !data[selChar]) return;
+  const nodes = data[selChar];
+
+  ctx.save();
+  ctx.translate(gPan.x, gPan.y);
+  ctx.scale(gScale, gScale);
+
+  // Draw edges first
+  Object.keys(gNodes).forEach(id => {
+    const n = nodes[id];
+    if (!n) return;
+    const from = gNodes[id];
+    const edges = [
+      ...(n.next_dialogue ? [{ to: n.next_dialogue, auto: true }] : []),
+      ...n.options.map(o => ({ to: o.next_dialogue, auto: false })).filter(e => e.to)
+    ];
+    edges.forEach(edge => {
+      const to = gNodes[edge.to];
+      if (!to) return;
+      const x1 = from.x + from.w, y1 = from.y + from.h / 2;
+      const x2 = to.x, y2 = to.y + to.h / 2;
+      const cp1x = x1 + (x2 - x1) * 0.5, cp2x = x1 + (x2 - x1) * 0.5;
+
+      // highlight edges connected to selected node
+      const isActive = id === selNode || edge.to === selNode;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.bezierCurveTo(cp1x, y1, cp2x, y2, x2, y2);
+      ctx.strokeStyle = isActive ? (edge.auto ? '#55aa55' : '#5566ff') : (edge.auto ? '#2a4a2a' : '#2a2a50');
+      ctx.lineWidth = isActive ? 2 : 1;
+      ctx.stroke();
+
+      // arrowhead
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      const ax = x2, ay = y2;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(ax - 8 * Math.cos(angle - 0.4), ay - 8 * Math.sin(angle - 0.4));
+      ctx.lineTo(ax - 8 * Math.cos(angle + 0.4), ay - 8 * Math.sin(angle + 0.4));
+      ctx.closePath();
+      ctx.fillStyle = isActive ? (edge.auto ? '#55aa55' : '#5566ff') : (edge.auto ? '#2a4a2a' : '#2a2a50');
+      ctx.fill();
+    });
+  });
+
+  // Draw nodes
+  Object.keys(gNodes).forEach(id => {
+    const gn = gNodes[id];
+    const isSel = id === selNode;
+    const isHov = id === gHover;
+
+    // Box
+    ctx.beginPath();
+    ctx.roundRect(gn.x, gn.y, gn.w, gn.h, 4);
+    if (gn.isStart) ctx.fillStyle = isSel ? '#1a3a1a' : '#111a11';
+    else if (gn.isTerminal) ctx.fillStyle = isSel ? '#3a1a1a' : '#1a1111';
+    else ctx.fillStyle = isSel ? '#1a1a40' : (isHov ? '#14142a' : '#0f0f1e');
+    ctx.fill();
+    ctx.strokeStyle = isSel ? '#7788ff' : (gn.isStart ? '#44aa55' : (gn.isTerminal ? '#aa4444' : (isHov ? '#4455aa' : '#2a2a55')));
+    ctx.lineWidth = isSel ? 2 : 1;
+    ctx.stroke();
+
+    // Condition dot
+    if (gn.hasCond) {
+      ctx.beginPath();
+      ctx.arc(gn.x + gn.w - 8, gn.y + 8, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#6677ff';
+      ctx.fill();
+    }
+
+    // Label
+    ctx.fillStyle = isSel ? '#ffffff' : (isHov ? '#c8c8d4' : '#8888bb');
+    ctx.font = `${isSel ? 'bold ' : ''}${Math.max(10, 12 * Math.min(gScale, 1))}px JetBrains Mono, monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    const maxW = gn.w - 16;
+    let label = id;
+    if (ctx.measureText(label).width > maxW) {
+      while (ctx.measureText(label + '…').width > maxW && label.length > 1) label = label.slice(0, -1);
+      label += '…';
+    }
+    ctx.fillText(label, gn.x + gn.w / 2, gn.y + gn.h / 2 - 6);
+
+    // Subtext: first few chars of node text
+    const n = nodes[id];
+    if (n && n.text) {
+      ctx.fillStyle = isSel ? '#9999cc' : '#3a3a6a';
+      ctx.font = `${Math.max(8, 9 * Math.min(gScale, 1))}px JetBrains Mono, monospace`;
+      let sub = n.text.substring(0, 28);
+      if (n.text.length > 28) sub += '…';
+      ctx.fillText(sub, gn.x + gn.w / 2, gn.y + gn.h / 2 + 9);
+    }
+  });
+
+  ctx.restore();
+}
+
+// Canvas interaction
+function initGraphCanvas() {
+  const canvas = document.getElementById('graph-canvas');
+
+  canvas.addEventListener('mousedown', e => {
+    gDragging = true;
+    gDragStart = { x: e.clientX, y: e.clientY };
+    gPanStart = { x: gPan.x, y: gPan.y };
+    canvas.classList.add('grabbing');
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (gDragging) {
+      gPan.x = gPanStart.x + (e.clientX - gDragStart.x);
+      gPan.y = gPanStart.y + (e.clientY - gDragStart.y);
+      drawGraph();
+    } else {
+      const pos = canvasToWorld(e.clientX, e.clientY, canvas);
+      const hit = hitTest(pos.x, pos.y);
+      if (hit !== gHover) { gHover = hit; drawGraph(); }
+      canvas.title = hit ? hit : '';
+    }
+  });
+
+  canvas.addEventListener('mouseup', e => {
+    const wasDrag = Math.abs(e.clientX - gDragStart.x) > 4 || Math.abs(e.clientY - gDragStart.y) > 4;
+    gDragging = false;
+    canvas.classList.remove('grabbing');
+    if (!wasDrag) {
+      const pos = canvasToWorld(e.clientX, e.clientY, canvas);
+      const hit = hitTest(pos.x, pos.y);
+      if (hit) { selNode = hit; renderSidebar(); renderInspector(); updateTopbar(); drawGraph(); }
+    }
+  });
+
+  canvas.addEventListener('dblclick', e => {
+    const pos = canvasToWorld(e.clientX, e.clientY, canvas);
+    const hit = hitTest(pos.x, pos.y);
+    if (hit) {
+      selNode = hit;
+      graphOpen = false;
+      document.getElementById('graph-view').classList.remove('show');
+      document.getElementById('btn-graph').classList.remove('primary');
+      renderAll();
+    }
+  });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    gScale *= factor;
+    gPan.x = cx - (cx - gPan.x) * factor;
+    gPan.y = cy - (cy - gPan.y) * factor;
+    drawGraph();
+  }, { passive: false });
+
+  window.addEventListener('resize', () => { if (graphOpen) drawGraph(); });
+}
+
+function canvasToWorld(mx, my, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: (mx - rect.left - gPan.x) / gScale, y: (my - rect.top - gPan.y) / gScale };
+}
+
+function hitTest(wx, wy) {
+  for (const id of Object.keys(gNodes)) {
+    const n = gNodes[id];
+    if (wx >= n.x && wx <= n.x + n.w && wy >= n.y && wy <= n.y + n.h) return id;
+  }
+  return null;
+}
+
+initGraphCanvas();
+
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.style.display='none', 2000);
+}
+</script>
+</body>
+</html>
