@@ -14,7 +14,7 @@ use log;
 use env_logger;
 use game_state::GameState;
 
-use crate::{data::chat, game_state::endings::Ending};
+use crate::{data::chat, game_state::endings::{self, Ending}};
 
 struct CleanUp;
 
@@ -29,7 +29,7 @@ impl Drop for CleanUp {
 
 fn main() {
     let _guard = CleanUp;
-    let mut state = GameState::Ending(Ending::DepressedEnding);//GameState::TitleScreen;
+    let mut state = GameState::TitleScreen;
 
     let args :Vec<String>= env::args().collect();
     println!("{args:?}");
@@ -43,6 +43,11 @@ fn main() {
             p if p == "--chats" => GameState::Chats,
             _ => GameState::MainConsole
         }
+    }
+
+    // check if the game ended then switch to that ending
+    if let Some(ending) = endings::get_ending(){
+        state = GameState::Ending(ending)
     }
     
     loop {

@@ -82,7 +82,7 @@ impl GameState {
             GameState::PasswordProtected(path) => format!("{}*", 
                                             GameState::OpenPath(path.to_path_buf())
                                                                 .as_name()),
-            GameState::Ending(ending) => "Ending".to_string()
+            GameState::Ending(ending) => format!("Ending: {}",ending.to_str())
 
         }
     }

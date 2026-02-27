@@ -29,6 +29,10 @@ pub enum EventType {
 }
 
 impl EventType {
+    /// The events are structured in the following format:
+    /// event_name;arg1;arg2;..etc
+    /// A possible potential problem is if the path for opening
+    /// contains a ; otherwise, everything is controlled
     pub fn from_str(s: &str) -> Self{
         let parts: Vec<&str> = s.split(';').filter(|s| !s.is_empty()).collect();
         match parts.as_slice() {
@@ -36,6 +40,10 @@ impl EventType {
                 ["dialogue", id] => EventType::OnDialogueNode(id.to_string()),
                 ["choose", id] => EventType::OnDialogueChoice(id.to_string()),
                 ["start"] => EventType::StartGame,
+                ["end",ending] => EventType::EndGame(
+                        Ending::from_str(*ending)
+                        .unwrap_or(Ending::DepressedEnding)
+                    ),
                 _ => panic!("Unparsable event type: {s}")
             }
     }
@@ -45,7 +53,7 @@ impl EventType {
             EventType::OnDialogueNode(id) => format!(";dialogue;{id};"),
             EventType::OnDialogueChoice(id) => format!(";choose;{id};"),
             EventType::StartGame => ";start;".to_string(),
-            EventType::EndGame(ending) => todo!()
+            EventType::EndGame(ending) => format!(";end;{};", ending.to_str())
         }
     }
 }
@@ -62,9 +70,7 @@ impl Effect {
             Effect::SetClearance(clearance) => player::set_access_level(*clearance as i32),
             Effect::Hire => player::hire(),
             Effect::Fire => player::fire(),
-            Effect::End(ending) => {
-                endings::end(ending.clone())
-            }
+            Effect::End(ending) => endings::end(*ending)
         }
     }
 }
@@ -162,7 +168,7 @@ fn process_event(id:i64) -> Result<(), rusqlite::Error>{
 
 
         conn.execute(
-            "UPDATE history (processed_at) VALUES (?1) WHERE id=?2", 
+            "UPDATE history SET processed_at = ?1 WHERE id = ?2", 
             (timestamp as i64, id))
     })?;
 
@@ -202,12 +208,22 @@ fn run_event_master()->Option<()>{
         for (id,event) in unprocessed{            
             // process each event
 
+            // Important NOTE:
+            // mark as processed FIRST
+            // I initially had this after processing but some events
+            // like end, kills the entire process so it never gets
+            // marked as process and gets processed each time from
+            // now on
+            // the potential problem is if the effect failed
+
+            let result = process_event(id as i64);
+
+            println!("{id}");
+
             if let Some(effect) = event_map.get(&event){
                 effect.activate();
             }
             
-            // mark as processed
-            let _ = process_event(id as i64);
         }
 
         std::thread::sleep(Duration::from_secs(1));       

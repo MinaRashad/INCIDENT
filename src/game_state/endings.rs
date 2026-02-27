@@ -1,10 +1,28 @@
+use crate::events::EventType;
+use crate::events::add_event;
 use crate::game_state::GameState;
 use crate::terminal;
 use crate::menu_components;
+use crate::data;
 // Ending
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Ending{
     DepressedEnding
+}
+
+impl Ending {
+    pub fn to_str(&self) -> &str {
+        match self {
+            Ending::DepressedEnding => "Depressed",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "Depressed" => Some(Ending::DepressedEnding),
+            _ => None,
+        }
+    }
 }
 
 
@@ -46,13 +64,52 @@ pub fn show_ending(ending: Ending)
     
     println!();
     println!();
+
+    let message: String = format!("You got the {} ending!", ending.to_str());
+    let message = terminal::center(message);
+    println!("{}",message);
+    println!();
+
     menu_components::wait_for_input();
-    
     
     GameState::Exit
 }
 
 
 pub fn end(ending:Ending){
-    show_ending(ending);
+
+    add_event(EventType::EndGame(ending).to_str());
+    std::process::exit(0)
+}
+
+/// A function that checks if the game ended
+/// if it did, returns an ending, otherwise None
+pub fn get_ending()->Option<Ending>{
+    let result  = data::METADATA_DB.with(
+        |db| 
+        -> Result<EventType, rusqlite::Error>{
+        let conn = db.get().expect("Database not initialized");
+
+        let mut statement = conn
+            .prepare("SELECT name 
+            FROM
+            history 
+            WHERE
+            name LIKE '_end%'
+            LIMIT 1")
+            .expect("Unable to create SQL statement");
+        
+        let ending :EventType =
+            statement.query_one([],
+            |row|    
+            Ok(EventType::from_str(row.get::<usize,String>(0)?.as_str()))
+        )?;
+
+        Ok(ending) 
+    });
+
+    match result {
+        Ok(EventType::EndGame(ending))=> Some(ending),
+        _ => None
+    }
 }
