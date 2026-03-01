@@ -1,25 +1,27 @@
 use crate::events::EventType;
 use crate::events::add_event;
 use crate::game_state::GameState;
+use crate::sound;
+use crate::sound::SoundCategory;
 use crate::terminal;
 use crate::menu_components;
 use crate::data;
 // Ending
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Ending{
-    DepressedEnding
+    Refusal
 }
 
 impl Ending {
     pub fn to_str(&self) -> &str {
         match self {
-            Ending::DepressedEnding => "Depressed",
+            Ending::Refusal => "Refusal",
         }
     }
 
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
-            "Depressed" => Some(Ending::DepressedEnding),
+            "Refused" => Some(Ending::Refusal),
             _ => None,
         }
     }
@@ -39,16 +41,16 @@ pub fn show_ending(ending: Ending)
 {
     terminal::clear_screen();
     terminal::clear_scrollback();
-    match ending {
-        Ending::DepressedEnding => {
-            let title = terminal::figlet_figure("THE END".to_string());
-            let title = terminal::center_multiline(title);
-            let title = terminal::foreground_color(title, [100, 100, 100]);
-            
-            println!("{}", title);
-            println!();
-            println!();
-            
+     let title = terminal::figlet_figure("THE END".to_string());
+    let title = terminal::center_multiline(title);
+    let title = terminal::foreground_color(title, [100, 100, 100]);
+    
+    println!("{}", title);
+    println!();
+    println!();
+    let text = match ending {
+        Ending::Refusal => {
+            sound::play_forever(SoundCategory::Sad);
             let text = "You turned down Marcus's offer.\n\
                         You wondered many times what your life\n\
                         will look like had you accepted the offer\n\
@@ -56,12 +58,12 @@ pub fn show_ending(ending: Ending)
                         All we have is only the present.";
             
             let text = terminal::center_multiline(text.to_string());
-            let text = terminal::faint(text);
+            terminal::faint(text)
             
-            println!("{}", text);
         }
-    }
+    };
     
+    println!("{}", text);
     println!();
     println!();
 

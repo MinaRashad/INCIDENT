@@ -37,7 +37,11 @@ pub enum SoundCategory{
     /// ACCESS GRANTED (spoken)
     AccessGranted,
     /// ACCESS DENIED (spoken)
-    AccessDenied
+    AccessDenied,
+
+    // loops
+    /// Sad loop (for losing scenes)
+    Sad
 }
 
 impl SoundCategory {
@@ -55,7 +59,9 @@ impl SoundCategory {
             SoundCategory::AccessDenied => "access_denied".to_string(),
             SoundCategory::AccessGranted => "access_granted".to_string(),
             SoundCategory::Scroll => "scroll".to_string(),
-            SoundCategory::NewMessage => "new_message".to_string()
+            SoundCategory::NewMessage => "new_message".to_string(),
+
+            SoundCategory::Sad => "sad".to_string()
         }
     }
 }
@@ -172,7 +178,7 @@ pub fn play(sound:SoundCategory)->Option<Duration>{
 
 /// Plays a sound from the specified category on infinite loop
 /// Returns Some(()) if successful, None if sound system not initialized
-fn play_forever(sound:SoundCategory)->Option<()>{
+pub fn play_forever(sound:SoundCategory)->Option<()>{
     let (
         stream, 
         Sound{ source})  =
