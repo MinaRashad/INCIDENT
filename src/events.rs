@@ -42,7 +42,7 @@ impl EventType {
                 ["start"] => EventType::StartGame,
                 ["end",ending] => EventType::EndGame(
                         Ending::from_str(*ending)
-                        .unwrap_or(Ending::DepressedEnding)
+                        .unwrap_or(Ending::Refusal)
                     ),
                 _ => panic!("Unparsable event type: {s}")
             }
@@ -82,7 +82,7 @@ pub fn init_events()
     let mut map : HashMap<EventType, Effect> = HashMap::new();
 
     map.insert(EventType::OnDialogueChoice("declined".to_string()),
-     Effect::End(Ending::DepressedEnding));
+     Effect::End(Ending::Refusal));
 
     return map;
 }
@@ -218,7 +218,6 @@ fn run_event_master()->Option<()>{
 
             let result = process_event(id as i64);
 
-            println!("{id}");
 
             if let Some(effect) = event_map.get(&event){
                 effect.activate();

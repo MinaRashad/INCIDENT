@@ -21,8 +21,8 @@ use crossterm::{
 
 
 use crate::data;
-use crate::data::ImageDoc;
-use crate::data::{MetadataField, Entry};
+use crate::data::docs::ImageDoc;
+use crate::data::docs::{MetadataField, Entry};
 use crate::data::docs::update_metadata;
 use crate::events::EventType;
 use crate::menu_components;
@@ -162,7 +162,7 @@ fn open_dir(path:PathBuf) -> GameState{
 
 fn path_gamestate(path:&PathBuf)->GameState{
 
-    let entry = data::Entry{path: path.to_path_buf()};
+    let entry = Entry{path: path.to_path_buf()};
     let metadata = data::docs::metadata(&entry);
 
     if let Some(player_access) = data::player::get_access_level() {
@@ -353,7 +353,7 @@ fn embed_images_in(file_content:&str)->Option<String>{
             let img_path = img_path.strip_prefix("<img>")?;
             let img_path = img_path.strip_suffix("</img>")?;
             let img_path = PathBuf::from(img_path);
-            let image = data::ImageDoc::image(img_path);
+            let image = ImageDoc::image(img_path);
             let image = menu_components::display_image(image, 
                 Some(image_width),
                 Some(image_height))?;
@@ -420,8 +420,8 @@ pub fn document_view(msg:&str,delay_ms:u64) -> Option<()> {
             let height: usize = area.height as usize;
             
 
-
-            let help_text = Paragraph::new("Press enter to exit. Use ↑/↓ to scroll")
+            // [ESC] close  [↑↓] scroll  [←→] switch choice  [Enter] select  [SHIFT+↑↓] change chat"
+            let help_text = Paragraph::new("[Enter] exit   [↑↓] scroll   [C] Contradiction   [N] Note")
                         .centered().add_modifier(Modifier::REVERSED);
             
             let content = lines.iter().skip(start).take(height)

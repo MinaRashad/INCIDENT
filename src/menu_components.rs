@@ -17,7 +17,7 @@ use sha2::digest::crypto_common::Key;
 
 
 
-use crate::data::{self, ImageDoc};
+use crate::data::{self, docs::ImageDoc};
 use crate::terminal::{self, drain_input};
 use crate::sound;
 use crate::game_state::GameState;

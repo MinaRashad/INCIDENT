@@ -14,7 +14,7 @@ pub mod docs;
 pub mod game;
 
 use std::path::PathBuf;
-use data::{Entry};
+use data::docs::Entry;
 
 // main menu
 // just the title screen, and input block
