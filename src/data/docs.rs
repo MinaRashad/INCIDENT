@@ -95,6 +95,7 @@ impl Metadata {
 
 /// Represents a tag that can be associated with entries
 /// Used for categorizing or labeling files and directories
+/// Used mainly for contraditions
 #[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct Tag{
     name:String
@@ -140,4 +141,28 @@ pub fn update_metadata(entry: &Entry, field: MetadataField)  {
         conn.execute(&sql, params![path, val])
             .expect("Failed to update metadata");
     });
+}
+
+
+// another type of documents that we will add is player-made documents
+// for now, this includes:
+// - Contradictions, These will be used as means to progress in the game
+// - Notes, Theses are player generated (risky) and only used to help them feel like a detective
+//          They can use it to store relevant facts or things they found out
+
+enum PlayerDocument{
+    Note(Note),
+    Contradiction(Contradiction)
+}
+
+struct Note {
+    path:Option<PathBuf>,
+    title:String,
+    content:String
+}
+
+struct Contradiction{
+    doc1: PathBuf,
+    doc2: PathBuf,
+    disagree_on:Tag
 }

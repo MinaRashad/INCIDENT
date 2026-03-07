@@ -1,6 +1,7 @@
 /target
 /assets
 /dev_helper/Inky_windows_64
+/Game_Design
 
 *.db
 *.db-wal

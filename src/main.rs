@@ -9,12 +9,15 @@ mod game_state;
 mod util;
 mod events;
 
-use std::{env, io::Error};
+use std::{env, io::Error, path::PathBuf};
 use log;
 use env_logger;
 use game_state::GameState;
 
-use crate::{data::chat, game_state::endings::{self, Ending}};
+// some random stuff used for testing
+use crate::{data::chat,
+  game_state::endings::{self, Ending},
+  views::docs::DOCS_ROOT};
 
 struct CleanUp;
 
@@ -29,7 +32,8 @@ impl Drop for CleanUp {
 
 fn main() {
     let _guard = CleanUp;
-    let mut state = GameState::TitleScreen;
+    let mut state = GameState::Contradiction(
+        PathBuf::from(DOCS_ROOT));//GameState::TitleScreen;
 
     let args :Vec<String>= env::args().collect();
     println!("{args:?}");

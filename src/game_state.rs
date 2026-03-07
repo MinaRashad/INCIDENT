@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 use ratatui::widgets::ListItem;
 use ansi_to_tui::IntoText;
+use crate::data::docs;
 use crate::views;
+use crate::views::docs::contradictions;
 use crate::windows;
 use crate::terminal;
 
@@ -43,6 +45,10 @@ pub enum GameState{
     Unauthorized(PathBuf),
     /// Prompt for password before accessing the given path
     PasswordProtected(PathBuf),
+    /// Contradiction view, PathPuf is the first document
+    Contradiction(PathBuf),
+    /// Note View
+    Note(Option<PathBuf>),
 
     // Chat states
     /// Chat log viewer
@@ -82,6 +88,13 @@ impl GameState {
             GameState::PasswordProtected(path) => format!("{}*", 
                                             GameState::OpenPath(path.to_path_buf())
                                                                 .as_name()),
+
+            GameState::Contradiction(path) => format!("Contradicts with {:?}",
+                                                    path.file_name().unwrap_or_default()
+                                                    ),
+
+            GameState::Note(path) => format!("Note"),
+
             GameState::Ending(ending) => format!("Ending: {}",ending.to_str())
 
         }
@@ -116,6 +129,10 @@ impl GameState {
                     },
                     GameState::Unauthorized(path)=> views::unauthorized_access(path),
                     GameState::PasswordProtected(path) => views::password_access(path),
+
+                    GameState::Contradiction(path)=> contradictions::mark_contradiction(path),
+                    GameState::Note(path) => todo!(),
+
                     GameState::Ending(ending) => endings::show_ending(ending), 
                     
                 }

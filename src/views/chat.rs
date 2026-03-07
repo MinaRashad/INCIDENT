@@ -64,7 +64,7 @@ pub fn start()->GameState{
 
         }
 
-        update_chat(&mut chat_app_state);
+        // update_chat(&mut chat_app_state);
 
     }
 

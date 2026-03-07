@@ -1,16 +1,24 @@
 use std::collections;
+use std::env::current_dir;
 use std::ffi::OsString;
 use std::io::Error;
 use std::io::Read;
 use std::path::{PathBuf,Path};
 use std::fs;
 
+use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+use std::vec;
 
 use ansi_to_tui::IntoText;
 
+use crossterm::event::KeyEvent;
 use log::error;
+use ratatui::symbols::block;
+use ratatui::widgets::Block;
+use ratatui::widgets::List;
+use ratatui::widgets::ListState;
 use ratatui::{
     prelude::*,
     widgets::Paragraph,
@@ -18,10 +26,12 @@ use ratatui::{
 use crossterm::{
     event::{Event, KeyCode, poll, read},
 };
+use sha2::digest::crypto_common::Key;
 
 
 use crate::data;
 use crate::data::docs::ImageDoc;
+use crate::data::docs::metadata;
 use crate::data::docs::{MetadataField, Entry};
 use crate::data::docs::update_metadata;
 use crate::events::EventType;
@@ -31,10 +41,19 @@ use crate::terminal;
 use crate::util::parent;
 use crate::views::chat;
 use crate::events;
+use crate::views::title;
+
+pub mod contradictions;
+pub mod notes;
 
 
 pub const DOCS_ROOT:&str = "assets/documents";
-// static DOCS_METADATA = 
+
+/// Possible operations on documents
+enum Operation {
+    addNote,
+    addContradiction
+}
 
 
 pub fn start() -> GameState {
@@ -228,7 +247,12 @@ fn open_file(path:PathBuf) -> GameState{
     }
     else{
         let file_content = header_str + file_content.as_str();
-        document_view(&file_content, 100);
+        if let Some(operation) = document_view(&file_content, 100){
+            return match operation {
+                Operation::addContradiction => GameState::Contradiction(path),
+                Operation::addNote => GameState::Note(Some(path))
+            }
+        };
     }
     
     GameState::GoBack(parent(path))
@@ -249,9 +273,17 @@ fn open_image(path: PathBuf) -> GameState{
          None);
 
     
-    match img {
-        Some(img) => {document_view(img.as_str(), 50);},
-        None => {}    
+    let op = match img {
+        Some(img) => document_view(img.as_str(), 50),
+        None => None
+    };
+
+    if let Some(op) = op 
+    {
+        return match op {
+            Operation::addContradiction => GameState::Contradiction(path),
+            Operation::addNote => GameState::Note(Some(path))
+        }
     };
     
 
@@ -398,8 +430,13 @@ fn embed_images_in(file_content:&str)->Option<String>{
     Some(result)
 }
 
+
+
+
 /// Function to show the document
-pub fn document_view(msg:&str,delay_ms:u64) -> Option<()> {
+/// It can also indicate the user wants to 
+/// add a note or add a contradiction to the case files
+fn document_view(msg:&str,delay_ms:u64) -> Option<Operation> {
     let lines:Vec<&str> = msg.lines().collect();
     // let curr_height: u32 = 0;
     let mut terminal = ratatui::init();
@@ -440,7 +477,7 @@ pub fn document_view(msg:&str,delay_ms:u64) -> Option<()> {
         {
             if let Event::Key(k) = read().ok()?{
                 if KeyCode::is_enter(&k.code) && k.is_release() {
-                    break Some(());
+                    break None;
                 }
                 // scrolling feature
                 else if  KeyCode::is_up(&k.code){
@@ -452,11 +489,152 @@ pub fn document_view(msg:&str,delay_ms:u64) -> Option<()> {
                         start = start + 1
                     }
                 }
+                // Contradition
+                else if KeyCode::is_char(&k.code, 'c'){
+                    break Some(Operation::addContradiction);
+                }
+                // Note
+                else if KeyCode::is_char(&k.code, 'n'){
+                    break Some(Operation::addNote);
+                }
             };
         }
         
     }
 
+}
 
+struct DocSelectionState  {
+        curr_path: PathBuf,
+        curr_selection: ListState, 
+        running: bool,
+        children: Vec<PathBuf>,
+        title:String
+}
+
+/// # `choose_file`
+/// a general function that prompts the user to select a file
+/// This is different from the regular directory 
+
+pub fn choose_file(title:&str)-> Option<PathBuf> 
+{
+    let mut state = DocSelectionState {
+        curr_path: PathBuf::from(DOCS_ROOT),
+        curr_selection: ListState::default(),
+        running: true,
+        children: vec![],
+        title: title.to_string()
+    };
+
+    let mut renderer = ratatui::init();    
+
+    terminal::drain_input();
+    loop {
+        if state.curr_path.is_file(){
+            break Some(state.curr_path);
+        }
+        if !state.running{
+            break None;
+        }
+        // render
+        renderer.draw(
+            |f| 
+                    {choose_file_render(f, &mut state);}
+                ).expect("failed to draw a frame");
+
+
+        // input
+        if poll(Duration::from_millis(500)).unwrap_or(false){
+            // input goes here
+            match read() {
+                Ok(Event::Key(k))
+                if k.is_release() => choose_file_input(k, &mut state),            
+                _ => {} // do nothing if anything else including error
+            };
+
+        }
+    }
+}
+
+fn choose_file_render(f: &mut Frame, state: &mut DocSelectionState)
+{
+
+    let curr_path = &state.curr_path;
+    let children = get_unopend_children(curr_path);
+    state.children = children;
+
+    let names = (&state.children)
+        .iter().map(|path| path.file_name())
+        .filter(|path| path.is_some())
+        .map(|name| name.unwrap().to_string_lossy());
+    
+    // now we have an iterator over opened children
+    // render them in a stateful widget
+    let area = f.area();
+    let layout = Layout::vertical([
+                Constraint::Length(3),// Title
+                Constraint::Fill(1),  // main content
+                Constraint::Length(1) // Help text
+            ]).split(area);
+
+    let title = 
+            Paragraph::new("Where is the Contradiction")
+            .block(Block::bordered()
+                    .border_set(symbols::border::ROUNDED)
+                    .style(Style::new().red().on_white()))
+            .rapid_blink()
+            .alignment(Alignment::Center)
+            ;
+
+    let selection_menu = List::new(names)
+                    .block(Block::bordered().title(curr_path.to_string_lossy()))
+                    .style(Style::new().black().on_white())
+                    .highlight_style(
+                        Style::new().bold().red().on_white().rapid_blink()
+                    );
+
+
+    f.render_widget(title, layout[0]);
+    f.render_stateful_widget(selection_menu, layout[1], &mut state.curr_selection);
 
 }
+
+fn choose_file_input(k: KeyEvent, state: &mut DocSelectionState){
+    match k.code {
+        KeyCode::Esc => {state.running = false},
+        KeyCode::Up => {state.curr_selection.select_previous();},
+        KeyCode::Down => {state.curr_selection.select_next();},
+        KeyCode::Enter => {
+            let selected_idx = state.curr_selection.selected().unwrap_or(0);
+            let selected_path = state.children.get(selected_idx)
+                        .unwrap_or(&state.children[0]);
+            state.curr_selection.select(Some(0));
+            state.curr_path = selected_path.to_path_buf();
+
+            // println!("{}", state.curr_path.to_string_lossy());
+            // thread::sleep(Duration::from_secs(1));
+
+
+        }
+        _ => {}
+        
+    }
+}
+
+fn get_unopend_children(path: &PathBuf)
+-> Vec<PathBuf>
+{
+    // get the open files/folders from the current path
+    if let Ok(dir) = path.read_dir() {
+        return dir
+            .filter (|entry| entry.is_ok())
+            .map(|entry| Entry{path:entry.unwrap().path()})
+            .filter(|entry| metadata(entry).opened)
+            .map(|entry| entry.path)
+            .collect()// only show opened;
+    }
+
+    return vec![];
+        
+}
+

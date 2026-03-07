@@ -849,13 +849,18 @@ function drawGraph() {
       ctx.lineWidth = isActive ? 2 : 1;
       ctx.stroke();
 
-      // arrowhead
-      const angle = Math.atan2(y2 - y1, x2 - x1);
+      // arrowhead - calculate tangent of Bezier curve at endpoint (t=1)
+      const cp1y = y1;
+      const cp2y = y2;
+      const tangentX = 3 * (cp2x - cp1x);
+      const tangentY = 3 * (cp2y - cp1y);
+      const angle = Math.atan2(tangentY, tangentX);
+      const arrowSize = 8;
       const ax = x2, ay = y2;
       ctx.beginPath();
       ctx.moveTo(ax, ay);
-      ctx.lineTo(ax - 8 * Math.cos(angle - 0.4), ay - 8 * Math.sin(angle - 0.4));
-      ctx.lineTo(ax - 8 * Math.cos(angle + 0.4), ay - 8 * Math.sin(angle + 0.4));
+      ctx.lineTo(ax - arrowSize * Math.cos(angle - 0.4), ay - arrowSize * Math.sin(angle - 0.4));
+      ctx.lineTo(ax - arrowSize * Math.cos(angle + 0.4), ay - arrowSize * Math.sin(angle + 0.4));
       ctx.closePath();
       ctx.fillStyle = isActive ? (edge.auto ? '#55aa55' : '#5566ff') : (edge.auto ? '#2a4a2a' : '#2a2a50');
       ctx.fill();
