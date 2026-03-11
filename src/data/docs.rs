@@ -98,7 +98,8 @@ impl Metadata {
 /// Used mainly for contraditions
 #[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct Tag{
-    name:String
+    pub id: u32,
+    pub value: String // We might need a more general way for this
 }
 
 
@@ -165,4 +166,39 @@ struct Contradiction{
     doc1: PathBuf,
     doc2: PathBuf,
     disagree_on:Tag
+}
+
+
+pub fn get_tags_of(entry: &Entry) -> Vec<Tag> {
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+        let path = entry.path.to_string_lossy().replace("\\", "/");
+
+        let mut stmt = conn.prepare(
+            "SELECT tag_id, value FROM metadata_tags WHERE path = ?1"
+        ).ok()?;
+
+        let tags: Vec<Tag> = stmt.query_map([path], |row| {
+            Ok(Tag {
+                id: row.get::<_, u32>(0)?,
+                value: row.get::<_, String>(1)?,
+            })
+        }).ok()?
+        .flatten()
+        .collect();
+
+        Some(tags)
+    }).unwrap_or(vec![])
+}
+
+pub fn get_tag_name(tag_id: u32) -> String {
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+        conn.query_row(
+            "SELECT name FROM tags WHERE id = ?1",
+            [tag_id],
+            |row| row.get::<_, String>(0),
+        )
+        .expect("Tag id not found — wrong tag id passed to get_tag_name")
+    })
 }

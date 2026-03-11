@@ -47,13 +47,15 @@ pub enum GameState{
     PasswordProtected(PathBuf),
     /// Contradiction view, PathPuf is the first document
     Contradiction(PathBuf),
-    /// Note View
+    /// Note View: add a note
     Note(Option<PathBuf>),
 
     // Chat states
     /// Chat log viewer
     Chats,
 
+    /// check user findings
+    Findings,
 
     /// Ending
     Ending(endings::Ending)
@@ -94,6 +96,7 @@ impl GameState {
                                                     ),
 
             GameState::Note(path) => format!("Note"),
+            GameState::Findings => format!("Current Findings"),
 
             GameState::Ending(ending) => format!("Ending: {}",ending.to_str())
 
@@ -132,6 +135,7 @@ impl GameState {
 
                     GameState::Contradiction(path)=> contradictions::mark_contradiction(path),
                     GameState::Note(path) => todo!(),
+                    GameState::Findings => todo!(),
 
                     GameState::Ending(ending) => endings::show_ending(ending), 
                     

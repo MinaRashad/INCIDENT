@@ -206,6 +206,7 @@ pub fn main_console()->GameState{
                         vec![
                             GameState::NewWindow("docs".to_string()),
                             GameState::NewWindow("chats".to_string()),
+                            GameState::Findings,
                             GameState::Exit], 
                         true)
 }

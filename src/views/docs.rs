@@ -560,6 +560,8 @@ fn choose_file_render(f: &mut Frame, state: &mut DocSelectionState)
 {
 
     let curr_path = &state.curr_path;
+    let curr_path_str = &curr_path.to_string_lossy().replace("\\", "/");
+
     let children = get_unopend_children(curr_path);
     state.children = children;
 
@@ -587,7 +589,7 @@ fn choose_file_render(f: &mut Frame, state: &mut DocSelectionState)
             ;
 
     let selection_menu = List::new(names)
-                    .block(Block::bordered().title(curr_path.to_string_lossy()))
+                    .block(Block::bordered().title(curr_path_str.as_str()))
                     .style(Style::new().black().on_white())
                     .highlight_style(
                         Style::new().bold().red().on_white().rapid_blink()

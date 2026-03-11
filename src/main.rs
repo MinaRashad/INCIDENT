@@ -32,8 +32,7 @@ impl Drop for CleanUp {
 
 fn main() {
     let _guard = CleanUp;
-    let mut state = GameState::Contradiction(
-        PathBuf::from(DOCS_ROOT));//GameState::TitleScreen;
+    let mut state = GameState::TitleScreen;
 
     let args :Vec<String>= env::args().collect();
     println!("{args:?}");
