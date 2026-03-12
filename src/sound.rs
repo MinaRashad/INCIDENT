@@ -1,3 +1,4 @@
+use rodio::Sink;
 use rodio::{Decoder, OutputStream, source::Source};
 use std::fs::{self, File};
 use std::io::{BufReader, Error};
@@ -178,15 +179,14 @@ pub fn play(sound:SoundCategory)->Option<Duration>{
 
 /// Plays a sound from the specified category on infinite loop
 /// Returns Some(()) if successful, None if sound system not initialized
-pub fn play_forever(sound:SoundCategory)->Option<()>{
-    let (
-        stream, 
+pub fn play_forever(sound:SoundCategory)->Option<rodio::Sink>{
+    let (stream, 
         Sound{ source})  =
         stream_and_sound(sound)?;
+    let sink = rodio::Sink::connect_new(stream.mixer());
+    sink.append(source.clone().repeat_infinite()); 
 
-    stream.mixer().add(source.clone().repeat_infinite());
-
-    Some(())
+    Some(sink)
 }
 
 /// Plays appropriate keystroke sound based on character type
