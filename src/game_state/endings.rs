@@ -50,7 +50,7 @@ pub fn show_ending(ending: Ending)
     println!();
     let text = match ending {
         Ending::Refusal => {
-            sound::play_forever(SoundCategory::Sad);
+            let _sink = sound::play_forever(SoundCategory::Sad);
             let text = "You turned down Marcus's offer.\n\
                         You wondered many times what your life\n\
                         will look like had you accepted the offer\n\

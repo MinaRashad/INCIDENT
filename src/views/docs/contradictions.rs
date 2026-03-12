@@ -4,13 +4,32 @@
 use std::{collections::{self, HashSet}, path::PathBuf, thread::sleep, time::Duration};
 
 use crossterm::event::{Event, KeyCode, KeyEvent, poll, read};
-use ratatui::{prelude::*, widgets::{Block, List, ListState, Paragraph}};
+use ratatui::{prelude::*, widgets::{Block, BorderType, List, ListState, Paragraph}};
 
-use crate::{data::{self, docs::{self, Entry, Tag}}, game_state::GameState, menu_components::{self, date}, terminal, views::docs::{DOCS_ROOT, choose_file}};
+use crate::data::{self, docs::{self, Entry, Tag}};
+use crate::game_state::GameState;
+use crate::menu_components;
+use crate::sound;
+use crate::terminal;
+use crate::views::docs::{DOCS_ROOT, choose_file};
 
 pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
 
+    // decorations
+    play_contradiction_animation();
+    let sink = sound::play_forever(sound::SoundCategory::LowHumming)
+                        .unwrap_or(rodio::Sink::new().0);
+
+    // step 1: select second document
     let second_document = choose_file("Which document does it contradict?");
+
+    // end humming music and start a new one
+    drop(sink);
+
+    let sink = sound::play_forever(sound::SoundCategory::LoudHumming)
+                            .unwrap_or(rodio::Sink::new().0);
+    
+    sink.set_volume(0.3);
 
     let Some(second_document) = second_document
     else {return GameState::OpenPath(first_doc);};
@@ -19,8 +38,6 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
         print_error("The document does not contradict itself".to_string());
         return GameState::OpenPath(first_doc);
     }
-
-    
 
     let (shared, first_tags, second_tags) = get_tags(
                      &Entry { path: first_doc.to_path_buf() },
@@ -39,21 +56,25 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
                             .find(|t| t.id == contradicting_tag)
                             .map(|tag| tag.value.clone())
                             .unwrap_or_default();
+
     let val2 = second_tags
                             .iter()
                             .find(|t| t.id == contradicting_tag)
                             .map(|tag| tag.value.clone())
                             .unwrap_or_default();
     if val1 == val2 {
-        print_error(format!("The documents say the same thing :{val1}"));
+        print_error(format!("The documents say the same thing: {val1}"));
 
     }
+
+    drop(sink);
 
     GameState::OpenPath(first_doc)
 }
 
 
 fn print_error(text:String){
+    sound::play(sound::SoundCategory::Error);
     terminal::clear_screen();
     terminal::clear_scrollback();
     
@@ -101,8 +122,6 @@ fn get_tags(path1: &Entry, path2:&Entry)
     (shared_ids, first_doc_tags, sec_doc_tags)
 }
 
-
-
 fn select_tag(shared: Vec<u32>) -> u32 {
     let tags: Vec<(u32, String)> = shared.iter()
         .map(|&id| (id, docs::get_tag_name(id)))
@@ -148,7 +167,7 @@ fn select_tag_render(f: &mut Frame, state: &mut TagSelectionState) {
     let title = Paragraph::new("What do they contradict on?")
         .block(Block::bordered()
             .border_set(symbols::border::ROUNDED)
-            .style(Style::new().bold().blue().on_light_green()))
+            .style(Style::new().bold().light_blue().on_light_green()))
         .rapid_blink()
         .alignment(Alignment::Center);
 
@@ -172,6 +191,7 @@ fn select_tag_render(f: &mut Frame, state: &mut TagSelectionState) {
 }
 
 fn select_tag_input(k: KeyEvent, state: &mut TagSelectionState) {
+    sound::play(sound::SoundCategory::GUIFeedback);
     match k.code {
         KeyCode::Up => state.list.select_previous(),
         KeyCode::Down => state.list.select_next(),
@@ -186,3 +206,108 @@ fn select_tag_input(k: KeyEvent, state: &mut TagSelectionState) {
 }    
 
 
+
+
+
+fn play_contradiction_animation() {
+    use std::time::Instant;
+
+    let mut renderer = ratatui::init();
+    terminal::drain_input();
+
+    let start = Instant::now();
+    let mut last_play = Instant::now();
+    let duration = sound::play(sound::SoundCategory::Bad);
+    let offset = 100;
+    while start.elapsed() < Duration::from_millis(1000) {
+        let ms = start.elapsed().as_millis();
+        
+        // make sure to  play sound effects after each ends
+        if let Some(dur) = duration
+            && dur.as_millis() + offset<= last_play.elapsed().as_millis()
+            {
+                last_play = Instant::now();
+                sound::play(sound::SoundCategory::Bad);
+            }
+
+        renderer.draw(|f| draw_contradiction_frame(f, ms)).unwrap();
+        sleep(Duration::from_millis(33));
+    }
+}
+
+fn draw_contradiction_frame(f: &mut Frame, ms: u128) {
+    let area = f.area();
+    let tick = (ms / 60) as usize;
+
+    // cycle through dramatic colors
+    let bg = match tick % 5 {
+        0 => Color::Red,
+        1 => Color::Rgb(220, 30, 30),
+        2 => Color::Rgb(255, 180, 0),
+        3 => Color::White,
+        _ => Color::Rgb(180, 0, 0),
+    };
+    let fg = match bg {
+        Color::White | Color::Rgb(255, 180, 0) => Color::Red,
+        _ => Color::White,
+    };
+    let line_fg = match bg {
+        Color::White => Color::Rgb(255, 150, 150),
+        _ => Color::Rgb(120, 0, 0),
+    };
+
+    // cross-hatch speed lines background
+    let w = area.width as usize;
+    let bg_lines: Vec<Line> = (0..area.height)
+        .map(|row| {
+            let ch = if row % 2 == 0 { "╲ " } else { "╱ " };
+            let s: String = ch.chars().cycle().take(w).collect();
+            Line::from(Span::styled(s, Style::default().fg(line_fg).bg(bg)))
+        })
+        .collect();
+    f.render_widget(Paragraph::new(Text::from(bg_lines)), area);
+
+    // phase 2: text + corner decorations after 400ms
+    if ms > 400 {
+        let excl_style = Style::default().fg(fg).bg(bg).bold();
+        let (w, h) = (area.width, area.height);
+        for &(x, y) in &[
+            (0u16, 0u16),
+            (w.saturating_sub(2), 0),
+            (0, h.saturating_sub(1)),
+            (w.saturating_sub(2), h.saturating_sub(1)),
+        ] {
+            if x < w && y < h {
+                f.render_widget(
+                    Paragraph::new("!!").style(excl_style),
+                    Rect::new(x, y, 2, 1),
+                );
+            }
+        }
+
+        let box_w = 32u16.min(area.width.saturating_sub(2));
+        let box_h = 5u16;
+        let bx = area.width.saturating_sub(box_w) / 2;
+        let by = area.height.saturating_sub(box_h) / 2;
+        let box_area = Rect::new(bx, by, box_w, box_h);
+
+        let text_style = Style::default()
+            .fg(fg)
+            .bg(bg)
+            .bold()
+            .add_modifier(Modifier::RAPID_BLINK);
+
+        let block = Block::bordered()
+            .border_type(BorderType::Double)
+            .border_style(Style::default().fg(fg).bg(bg).bold());
+
+        let para = Paragraph::new(Text::from(vec![
+            Line::from(""),
+            Line::from(Span::styled("C O N T R A D I C T I O N !", text_style)),
+        ]))
+        .alignment(Alignment::Center)
+        .block(block);
+
+        f.render_widget(para, box_area);
+    }
+}

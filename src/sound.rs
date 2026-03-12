@@ -39,10 +39,16 @@ pub enum SoundCategory{
     AccessGranted,
     /// ACCESS DENIED (spoken)
     AccessDenied,
+    /// Error
+    Error,
 
     // loops
     /// Sad loop (for losing scenes)
-    Sad
+    Sad,
+
+    /// Humming loops
+    LowHumming,
+    LoudHumming,
 }
 
 impl SoundCategory {
@@ -59,10 +65,13 @@ impl SoundCategory {
             SoundCategory::Bad => "bad".to_string(),
             SoundCategory::AccessDenied => "access_denied".to_string(),
             SoundCategory::AccessGranted => "access_granted".to_string(),
+            SoundCategory::Error => "error".to_string(),
             SoundCategory::Scroll => "scroll".to_string(),
             SoundCategory::NewMessage => "new_message".to_string(),
 
-            SoundCategory::Sad => "sad".to_string()
+            SoundCategory::Sad => "sad".to_string(),
+            SoundCategory::LowHumming => "low_humming".to_string(),
+            SoundCategory::LoudHumming => "loud_humming".to_string()
         }
     }
 }

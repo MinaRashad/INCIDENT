@@ -37,6 +37,7 @@ use crate::data::docs::update_metadata;
 use crate::events::EventType;
 use crate::menu_components;
 use crate::game_state::GameState;
+use crate::sound;
 use crate::terminal;
 use crate::util::parent;
 use crate::views::chat;
@@ -457,7 +458,6 @@ fn document_view(msg:&str,delay_ms:u64) -> Option<Operation> {
             let height: usize = area.height as usize;
             
 
-            // [ESC] close  [↑↓] scroll  [←→] switch choice  [Enter] select  [SHIFT+↑↓] change chat"
             let help_text = Paragraph::new("[Enter] exit   [↑↓] scroll   [C] Contradiction   [N] Note")
                         .centered().add_modifier(Modifier::REVERSED);
             
@@ -476,7 +476,8 @@ fn document_view(msg:&str,delay_ms:u64) -> Option<Operation> {
         if poll(Duration::from_millis(delay_ms)).unwrap_or(false)
         {
             if let Event::Key(k) = read().ok()?{
-                if KeyCode::is_enter(&k.code) && k.is_release() {
+                if (KeyCode::is_enter(&k.code) || KeyCode::is_esc(&k.code)) 
+                && k.is_release() {
                     break None;
                 }
                 // scrolling feature
@@ -596,12 +597,18 @@ fn choose_file_render(f: &mut Frame, state: &mut DocSelectionState)
                     );
 
 
+    let help = Paragraph::new("[↑↓] navigate   [Enter] open   [Esc] cancel")
+        .centered()
+        .add_modifier(Modifier::REVERSED);
+
     f.render_widget(title, layout[0]);
     f.render_stateful_widget(selection_menu, layout[1], &mut state.curr_selection);
+    f.render_widget(help, layout[2]);
 
 }
 
 fn choose_file_input(k: KeyEvent, state: &mut DocSelectionState){
+    sound::play(sound::SoundCategory::GUIFeedback);
     match k.code {
         KeyCode::Esc => {state.running = false},
         KeyCode::Up => {state.curr_selection.select_previous();},

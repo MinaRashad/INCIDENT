@@ -102,7 +102,6 @@ INSERT OR IGNORE INTO metadata (path) VALUES ('assets/documents/Case details/Bad
 
 -- Autopsy
 INSERT INTO metadata_tags (path, tag_id, value) VALUES ('assets/documents/Case details/Autopsy', 2, 'Gunshot wound to the head');
-INSERT INTO metadata_tags (path, tag_id, value) VALUES ('assets/documents/Case details/Autopsy', 3, 'Riverside Towers, Apt 12B');
 
 -- Chen Profile
 INSERT INTO metadata_tags (path, tag_id, value) VALUES ('assets/documents/Case details/Chen Profile.txt', 3, 'Riverside Towers, Apt 12B');
