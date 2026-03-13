@@ -6,7 +6,7 @@ use std::{collections::{self, HashSet}, path::PathBuf, thread::sleep, time::Dura
 use crossterm::event::{Event, KeyCode, KeyEvent, poll, read};
 use ratatui::{prelude::*, widgets::{Block, BorderType, Clear, List, ListState, Paragraph}};
 
-use crate::data::{self, docs::{self, Contradiction, Entry, Tag, add_contradiction, contradiction_exists}};
+use crate::{data::{self, docs::{self, Contradiction, Entry, Tag, add_contradiction, contradiction_exists}}, events};
 use crate::game_state::GameState;
 use crate::menu_components;
 use crate::sound;
@@ -81,7 +81,7 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
 
     let contradiction = Contradiction{
         doc1:first_doc.to_path_buf(),
-        doc2:second_document,
+        doc2:second_document.to_path_buf(),
         disagree_on: tag1
     };
 
@@ -95,7 +95,10 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
     drop(sink);
 
     play_contradiction_found_animation();
-
+    events::add_event(format!("contradiction_{}_{}", 
+                first_doc.file_name().unwrap_or_default().to_string_lossy(), 
+                second_document.file_name().unwrap_or_default().to_string_lossy()
+            ));
 
     GameState::OpenPath(first_doc)
 }
