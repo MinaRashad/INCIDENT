@@ -71,11 +71,12 @@ impl GameState {
             GameState::Chats => "Chat Log".to_string(),
             GameState::Docs => "Documents".to_string(),
             GameState::MainConsole => "Main Console".to_string(),
-            GameState::OpenPath(path) => path.file_name()
-                                        .and_then(|f| f.to_str())
-                                        .map(|s| s.to_string())
-                                        .unwrap_or("UNKNOWN FILE".to_string())
-                                    ,
+            GameState::OpenPath(path) =>{
+                                        let name = path.file_name()
+                                            .and_then(|f| f.to_str())
+                                            .unwrap_or("UNKNOWN");
+                                        format!("{}{}", name, if path.is_dir() { "/" } else { "" })
+                                    },
             GameState::GoBack(_) => "Back".to_string(),
             GameState::Exit => "Exit".to_string(),
             GameState::Options => "Options".to_string(),

@@ -96,7 +96,7 @@ impl Metadata {
 /// Represents a tag that can be associated with entries
 /// Used for categorizing or labeling files and directories
 /// Used mainly for contraditions
-#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Default)]
 pub struct Tag{
     pub id: u32,
     pub value: String // We might need a more general way for this
@@ -156,16 +156,16 @@ enum PlayerDocument{
     Contradiction(Contradiction)
 }
 
-struct Note {
-    path:Option<PathBuf>,
-    title:String,
-    content:String
+pub struct Note {
+    pub path:Option<PathBuf>,
+    pub title:String,
+    pub content:String
 }
 
-struct Contradiction{
-    doc1: PathBuf,
-    doc2: PathBuf,
-    disagree_on:Tag
+pub struct Contradiction{
+    pub doc1: PathBuf,
+    pub doc2: PathBuf,
+    pub disagree_on:Tag
 }
 
 
@@ -200,5 +200,49 @@ pub fn get_tag_name(tag_id: u32) -> String {
             |row| row.get::<_, String>(0),
         )
         .expect("Tag id not found — wrong tag id passed to get_tag_name")
+    })
+}
+
+pub fn add_contradiction(contradiction: Contradiction) {
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+        let path_a = contradiction.doc1.to_string_lossy().replace("\\", "/");
+        let path_b = contradiction.doc2.to_string_lossy().replace("\\", "/");
+        let tag_id = contradiction.disagree_on.id;
+
+        conn.execute(
+            "INSERT INTO contradictions (doc_path_a, doc_path_b, tag_id) VALUES (?1, ?2, ?3)",
+            params![path_a, path_b, tag_id],
+        )
+        .expect("Failed to insert contradiction");
+
+        let contradiction_id = conn.last_insert_rowid();
+
+        conn.execute(
+            "INSERT INTO user_docs (doc_id, doc_table) VALUES (?1, 'contradictions')",
+            params![contradiction_id],
+        )
+        .expect("Failed to insert into user_docs");
+    });
+}
+
+pub fn contradiction_exists(contradiction: &Contradiction) -> bool {
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+        let path_a = contradiction.doc1.to_string_lossy().replace("\\", "/");
+        let path_b = contradiction.doc2.to_string_lossy().replace("\\", "/");
+        let tag_id = contradiction.disagree_on.id;
+
+        conn.query_row(
+            "SELECT 1 FROM contradictions
+             WHERE tag_id = ?3
+             AND ((doc_path_a = ?1 AND doc_path_b = ?2)
+               OR (doc_path_a = ?2 AND doc_path_b = ?1))",
+            params![path_a, path_b, tag_id],
+            |_| Ok(()),
+        )
+        .optional()
+        .expect("Failed to query contradictions")
+        .is_some()
     })
 }

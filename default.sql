@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS metadata_tags (
     tag_id INTEGER NOT NULL,
     value TEXT,
     PRIMARY KEY (path, tag_id),
-    FOREIGN KEY (path) REFERENCES metadata(path) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+
 );
 
 CREATE TABLE IF NOT EXISTS player (
@@ -113,7 +113,7 @@ INSERT INTO metadata_tags (path, tag_id, value) VALUES ('assets/documents/Case d
 INSERT INTO metadata_tags (path, tag_id, value) VALUES ('assets/documents/Case details/Victim chatlogs/Chat with robert', 1, '6:23 PM');
 
 -- Badge Access Log: system records show he badged out at 7:47 PM (contradicts chat)
-INSERT INTO metadata_tags (path, tag_id, value) VALUES ('assets/documents/Case details/Badge Access Log', 1, '7:47 PM');
+INSERT INTO metadata_tags (path, tag_id, value) VALUES ('assets/documents/Case details/Mediflow Systems/Badge Access Log', 1, '7:47 PM');
 
 -- Test contradiction
 INSERT INTO contradictions (doc_path_a, doc_path_b, tag_id)

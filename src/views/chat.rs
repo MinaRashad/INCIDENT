@@ -382,81 +382,6 @@ fn current_npc(chat_app_state:&mut ChatAppState)->Option<NPC>{
     Some(NPC::from_str(npc))
 }
 
-// Static historical chats functions
-// not for dynamic use
-/// Displays a single *static* chat message in a bordered bubble format
-/// 
-/// Do not use for dynamic chats
-///
-/// # Arguments
-/// * `sender` - Name of the message sender
-/// * `timestamp` - Message timestamp string
-/// * `message` - The message content (will be word-wrapped)
-/// * `is_left` - If true, aligns bubble to left; if false, aligns to right
-/// 
-/// The bubble automatically adjusts its width based on content:
-/// - MIN_WIDTH (30 chars): Minimum bubble size
-/// - MAX_WIDTH (50 chars): Maximum bubble size
-/// - Width adapts to fit the longest content line
-/// 
-/// Format:
-/// ```
-/// ┌────────────────┐
-/// │ Nov 2, 10:23 PM│
-/// │ Sarah          │
-/// ├────────────────┤
-/// │ Hello there!   │
-/// └────────────────┘
-/// ```
-pub fn display_chat_bubble(sender: &str, timestamp: &str, message: &str, is_left: bool) {
-    const MAX_WIDTH: usize = 50;  // Maximum bubble width
-    const MIN_WIDTH: usize = 30;  // Minimum bubble width
-    
-    // Calculate required width based on content
-    let sender_len = sender.len();
-    let timestamp_len = timestamp.len();
-    
-    // Word wrap message to MAX_WIDTH
-    let wrapped_lines = word_wrap(message, MAX_WIDTH - 4);
-    
-    // Find the longest line to determine bubble width
-    let longest_message = wrapped_lines.iter()
-        .map(|line| line.len())
-        .max()
-        .unwrap_or(0);
-    
-    // Bubble width = longest content + padding
-    let bubble_width = sender_len
-        .max(timestamp_len)
-        .max(longest_message)
-        .max(MIN_WIDTH)
-        .min(MAX_WIDTH) + 2; // +2 for padding
-    
-    let indent = if is_left { String::new() } else { " ".repeat(bubble_width) };
-    
-    // Top border
-    println!("{}┌{}┐", indent, "─".repeat(bubble_width));
-    
-    // Timestamp
-    println!("{}│ {:<width$} │", indent, timestamp, width = bubble_width - 2);
-    
-    // Sender
-    println!("{}│ {:<width$} │", indent, sender, width = bubble_width - 2);
-    
-    // Separator
-    println!("{}├{}┤", indent, "─".repeat(bubble_width));
-    
-    // Message (each wrapped line)
-    for line in &wrapped_lines {
-        println!("{}│ {:<width$} │", indent, line, width = bubble_width - 2);
-    }
-    
-    // Bottom border
-    println!("{}└{}┘", indent, "─".repeat(bubble_width));
-    println!();
-
-    // sleep so we do not print everything at once
-}
 
 /// Wraps text to fit within a maximum width while preserving words
 /// 
@@ -501,6 +426,7 @@ fn calculate_message_height(content: &str, width: u16) -> u16 {
     wrapped_lines.len() as u16 + 2 // number of lines + 2 for borders
 }
 
+// Static historical chats functions
 /// Parses and displays a complete chat conversation
 /// Do not use for dynamic chats
 /// # Arguments
@@ -516,58 +442,29 @@ fn calculate_message_height(content: &str, width: u16) -> u16 {
 /// Messages from person1 align left, messages from person2 align right.
 /// Displays a centered header with participant names.
 /// Sleeps 2 seconds between messages for readability.
-pub fn parse_and_display_chat(content: &str) {
-    let mut lines = content.lines();
-        let line = lines.next();
-        let line = match line {
-            Some(line)=>line,
-            None => return ()
-        };
-        let split = line.split("][");
-        let split : Vec<&str> = split.into_iter().collect();
-        let sender = split[1];
-        let reciever = split[2];
-        let reciever = match reciever.strip_suffix(']') {
-            Some(r)=> r,
-            None => reciever
-        };
-    let (person1, person2) = (sender, reciever); // e.g., ("Sarah", "Marcus")
-    let mut header = String::new();
-    header += "\n┌─────────────────────────────────────┐\n";
-    header +="│ TEXT MESSAGE LOG                    │\n";
-    header += format!("│ {} ↔ {} │\n", person1, person2).as_str();
-    header +="└─────────────────────────────────────┘\n";
-    header += "Hold ESC to display all at once";
-    let header = terminal::center_multiline(header);
-    println!("{}",header);
+pub fn parse_chat(content: &str) -> String {
+    let mut lines_iter = content.lines();
 
-    let mut wait = true;
-    
-    for line in content.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        
-        // Parse: "[Nov 2, 10:23 PM] Sarah: Message here"
-        if 
-        let Some((timestamp, rest)) = parse_message_line(line)
-        && 
-        let Some((sender, message)) = rest.split_once(": ") 
-        {
-            let is_left = sender.trim() == person1;
-            display_chat_bubble(sender.trim(), &timestamp, message.trim(), is_left);
-            if wait {thread::sleep(Duration::from_secs(2))};
-        }
-        
+    let first_line = match lines_iter.next() {
+        Some(l) => l,
+        None => return String::new(),
+    };
 
-        let key = terminal::get_input_now();
-        if key.is_esc() {
-            wait = false
-        }
+    let split: Vec<&str> = first_line.split("][").collect();
+    let person2 = split[2].trim_end_matches(']');
+
+    let mut out = format!("Extracted from {}\n\n", person2);
+
+    let non_empty: Vec<&str> = lines_iter
+        .filter(|l| !l.trim().is_empty())
+        .collect();
+
+    for line in non_empty {
+        out += line;
+        out += "\n\n";
     }
 
-    menu_components::wait_for_scroll();
+    out
 }
 
 /// Extracts timestamp and remaining content from a chat message line

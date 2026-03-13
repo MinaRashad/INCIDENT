@@ -153,13 +153,16 @@ fn open_dir(path:PathBuf) -> GameState{
         }
     };
 
-    let contents = match get_options(contents) {
+    let mut contents = match get_options(contents) {
         Ok(v)=> v,
         Err(_)=> {
             error!("Failed to generate options from folder contents");
             return fallback;
         }
     };
+
+    contents.sort_by_key(|p| !p.is_dir());
+
 
     let title = path.to_str()
                         .and_then(|path| path.strip_prefix("assets"))
@@ -243,18 +246,21 @@ fn open_file(path:PathBuf) -> GameState{
 
     terminal::clear_scrollback();
 
-    if file_content.starts_with("[CHAT]"){
-        chat::parse_and_display_chat(&file_content);
-    }
-    else{
-        let file_content = header_str + file_content.as_str();
-        if let Some(operation) = document_view(&file_content, 100){
-            return match operation {
-                Operation::addContradiction => GameState::Contradiction(path),
-                Operation::addNote => GameState::Note(Some(path))
-            }
-        };
-    }
+    let file_content = if file_content.starts_with("[CHAT]"){
+                chat::parse_chat(&file_content)
+            }else{
+                file_content
+            };
+
+    
+    let file_content = header_str + file_content.as_str();
+    if let Some(operation) = document_view(&file_content, 100){
+        return match operation {
+            Operation::addContradiction => GameState::Contradiction(path),
+            Operation::addNote => GameState::Note(Some(path))
+        }
+    };
+    
     
     GameState::GoBack(parent(path))
 }
@@ -561,15 +567,22 @@ fn choose_file_render(f: &mut Frame, state: &mut DocSelectionState)
 {
 
     let curr_path = &state.curr_path;
-    let curr_path_str = &curr_path.to_string_lossy().replace("\\", "/");
+    let curr_path_str = &curr_path.to_string_lossy()
+                            .replace("\\", "/");
+    let curr_path_str = curr_path_str
+                            .strip_prefix("assets")
+                            .unwrap_or("Documents");
 
-    let children = get_unopend_children(curr_path);
+    let mut children = get_unopend_children(curr_path);
+    children.sort_by_key(|c| !c.is_dir());
     state.children = children;
 
     let names = (&state.children)
-        .iter().map(|path| path.file_name())
-        .filter(|path| path.is_some())
-        .map(|name| name.unwrap().to_string_lossy());
+                .iter()
+                .filter_map(|path| {
+                    let name = path.file_name()?.to_string_lossy();
+                    Some(format!("{}{}", name, if path.is_dir() { "/" } else { "" }))
+                });
     
     // now we have an iterator over opened children
     // render them in a stateful widget
@@ -590,7 +603,7 @@ fn choose_file_render(f: &mut Frame, state: &mut DocSelectionState)
             ;
 
     let selection_menu = List::new(names)
-                    .block(Block::bordered().title(curr_path_str.as_str()))
+                    .block(Block::bordered().title(curr_path_str))
                     .style(Style::new().black().on_white())
                     .highlight_style(
                         Style::new().bold().red().on_white().rapid_blink()
