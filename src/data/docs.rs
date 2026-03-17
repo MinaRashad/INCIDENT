@@ -151,9 +151,60 @@ pub fn update_metadata(entry: &Entry, field: MetadataField)  {
 // - Notes, Theses are player generated (risky) and only used to help them feel like a detective
 //          They can use it to store relevant facts or things they found out
 
-enum PlayerDocument{
+pub enum PlayerDocument{
     Note(Note),
     Contradiction(Contradiction)
+}
+
+pub fn get_player_documents() -> Vec<PlayerDocument> {
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+        let mut stmt = conn.prepare("SELECT doc_id, doc_table FROM user_docs ORDER BY id ASC").expect("Failed to prepare statement");
+        
+        let docs_iter = stmt.query_map([], |row| {
+            let doc_id: i64 = row.get(0)?;
+            let doc_table: String = row.get(1)?;
+            Ok((doc_id, doc_table))
+        }).expect("Failed to query user_docs");
+
+        let mut results = Vec::new();
+        for doc in docs_iter {
+            let (doc_id, doc_table) = doc.expect("Failed to parse user_doc");
+            if doc_table == "notes" {
+                let mut note_stmt = conn.prepare("SELECT title, content, doc_path FROM notes WHERE id = ?1").expect("Failed to prepare note statement");
+                let note = note_stmt.query_row([doc_id], |row| {
+                    let path_str: Option<String> = row.get(2)?;
+                    Ok(Note {
+                        title: row.get(0)?,
+                        content: row.get(1)?,
+                        path: path_str.map(PathBuf::from),
+                    })
+                }).expect("Note id not found");
+                results.push(PlayerDocument::Note(note));
+            } else if doc_table == "contradictions" {
+                 let mut contra_stmt = conn.prepare(
+                    "SELECT doc_path_a, doc_path_b, contradictions.tag_id, tags.name, metadata_tags.value 
+                     FROM contradictions 
+                     JOIN tags ON contradictions.tag_id = tags.id
+                     JOIN metadata_tags ON contradictions.doc_path_a = metadata_tags.path AND contradictions.tag_id = metadata_tags.tag_id
+                     WHERE contradictions.id = ?1"
+                ).expect("Failed to prepare contradiction statement");
+                
+                let contradiction = contra_stmt.query_row([doc_id], |row| {
+                    Ok(Contradiction {
+                        doc1: PathBuf::from(row.get::<_, String>(0)?),
+                        doc2: PathBuf::from(row.get::<_, String>(1)?),
+                        disagree_on: Tag {
+                            id: row.get(2)?,
+                            value: row.get(4)?,
+                        },
+                    })
+                }).expect("Contradiction id not found");
+                results.push(PlayerDocument::Contradiction(contradiction));
+            }
+        }
+        results
+    })
 }
 
 pub struct Note {
@@ -200,6 +251,69 @@ pub fn get_tag_name(tag_id: u32) -> String {
             |row| row.get::<_, String>(0),
         )
         .expect("Tag id not found — wrong tag id passed to get_tag_name")
+    })
+}
+
+pub fn add_note(note: Note) {
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+        let path = note.path.map(|p| p.to_string_lossy().replace("\\", "/"));
+
+        conn.execute(
+            "INSERT INTO notes (title, content, doc_path) VALUES (?1, ?2, ?3)",
+            params![note.title, note.content, path],
+        )
+        .expect("Failed to insert note");
+
+        let note_id = conn.last_insert_rowid();
+
+        conn.execute(
+            "INSERT INTO user_docs (doc_id, doc_table) VALUES (?1, 'notes')",
+            params![note_id],
+        )
+        .expect("Failed to insert into user_docs");
+    });
+}
+
+pub fn get_notes() -> Vec<Note> {
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+        let mut stmt = conn.prepare("SELECT title, content, doc_path FROM notes").expect("Failed to prepare statement");
+        let note_iter = stmt.query_map([], |row| {
+            let path_str: Option<String> = row.get(2)?;
+            Ok(Note {
+                title: row.get(0)?,
+                content: row.get(1)?,
+                path: path_str.map(PathBuf::from),
+            })
+        }).expect("Failed to query notes");
+
+        note_iter.map(|n| n.expect("Failed to parse note")).collect()
+    })
+}
+
+pub fn get_contradictions() -> Vec<Contradiction> {
+    METADATA_DB.with(|db| {
+        let conn = db.get().expect("Database not initialized");
+        let mut stmt = conn.prepare(
+            "SELECT doc_path_a, doc_path_b, contradictions.tag_id, tags.name, metadata_tags.value 
+             FROM contradictions 
+             JOIN tags ON contradictions.tag_id = tags.id
+             JOIN metadata_tags ON contradictions.doc_path_a = metadata_tags.path AND contradictions.tag_id = metadata_tags.tag_id"
+        ).expect("Failed to prepare statement");
+
+        let contradiction_iter = stmt.query_map([], |row| {
+            Ok(Contradiction {
+                doc1: PathBuf::from(row.get::<_, String>(0)?),
+                doc2: PathBuf::from(row.get::<_, String>(1)?),
+                disagree_on: Tag {
+                    id: row.get(2)?,
+                    value: row.get(4)?,
+                },
+            })
+        }).expect("Failed to query contradictions");
+
+        contradiction_iter.map(|c| c.expect("Failed to parse contradiction")).collect()
     })
 }
 

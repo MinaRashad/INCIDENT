@@ -12,6 +12,7 @@ use crate::util::parent;
 pub mod chat;
 pub mod docs;
 pub mod game;
+pub mod findings;
 
 use std::path::PathBuf;
 use data::docs::Entry;

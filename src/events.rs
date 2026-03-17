@@ -18,6 +18,8 @@ pub enum Effect{
     Fire,
     End(endings::Ending)
 }
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+struct DocumentPath(String);
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum EventType {
@@ -25,6 +27,7 @@ pub enum EventType {
     OnPathOpen(PathBuf),
     OnDialogueNode(String),
     OnDialogueChoice(String),
+    OnContradiction(DocumentPath, DocumentPath, u64),
     EndGame(Ending)
 }
 
@@ -44,6 +47,14 @@ impl EventType {
                         Ending::from_str(*ending)
                         .unwrap_or(Ending::Refusal)
                     ),
+                ["contradiction", doc1, doc2, tag_id]
+                    => {
+                        EventType::OnContradiction(
+                            DocumentPath(doc1.to_string()), 
+                            DocumentPath(doc2.to_string()),
+                            tag_id.parse().unwrap_or_default()
+                        )
+                    }
                 _ => panic!("Unparsable event type: {s}")
             }
     }
@@ -52,8 +63,15 @@ impl EventType {
             EventType::OnPathOpen(path) => format!(";path;{};", path.display()),
             EventType::OnDialogueNode(id) => format!(";dialogue;{id};"),
             EventType::OnDialogueChoice(id) => format!(";choose;{id};"),
+            EventType::OnContradiction(
+                    DocumentPath(doc1),
+                    DocumentPath(doc2),
+                    contradicting_tag
+                 ) => format!("contradiction;{};{};{};", 
+                    doc1, doc2, contradicting_tag
+                ),
             EventType::StartGame => ";start;".to_string(),
-            EventType::EndGame(ending) => format!(";end;{};", ending.to_str())
+            EventType::EndGame(ending) => format!(";end;{};", ending.to_str()),
         }
     }
 }

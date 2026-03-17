@@ -135,8 +135,8 @@ impl GameState {
                     GameState::PasswordProtected(path) => views::password_access(path),
 
                     GameState::Contradiction(path)=> contradictions::mark_contradiction(path),
-                    GameState::Note(path) => todo!(),
-                    GameState::Findings => todo!(),
+                    GameState::Note(path) => views::docs::notes::write_note(path),
+                    GameState::Findings => views::findings::display_findings(),
 
                     GameState::Ending(ending) => endings::show_ending(ending), 
                     

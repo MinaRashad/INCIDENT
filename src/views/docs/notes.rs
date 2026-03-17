@@ -125,7 +125,7 @@ fn render_note(f: &mut Frame, state: &NoteState) {
 }
 
 fn handle_input(key: KeyEvent, state: &mut NoteState) {
-    if key.kind == event::KeyEventKind::Release {
+    if key.kind != event::KeyEventKind::Release {
         return;
     }
 

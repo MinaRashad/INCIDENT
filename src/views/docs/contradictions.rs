@@ -95,9 +95,10 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
     drop(sink);
 
     play_contradiction_found_animation();
-    events::add_event(format!("contradiction_{}_{}", 
+    events::add_event(format!("contradiction;{};{};{};", 
                 first_doc.file_name().unwrap_or_default().to_string_lossy(), 
-                second_document.file_name().unwrap_or_default().to_string_lossy()
+                second_document.file_name().unwrap_or_default().to_string_lossy(),
+                contradicting_tag
             ));
 
     GameState::OpenPath(first_doc)
