@@ -1,0 +1,728 @@
+{
+  "Marcus": {
+    "start": {
+      "text": "Yo! Dude, finally got through to you. Been trying to reach you all week",
+      "options": [
+        {
+          "text": "Yeah sorry man, been dealing with some stuff. What's up?",
+          "next_dialogue": "whats_up",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I know, I know. Things have been rough lately",
+          "next_dialogue": "things_rough",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "whats_up": {
+      "text": "Listen, I know things haven't been easy since you lost your job. But I think I finally got something for you",
+      "options": [
+        {
+          "text": "Marcus, you don't have to keep doing this...",
+          "next_dialogue": "dont_have_to",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "For real? What is it?",
+          "next_dialogue": "the_opportunity",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "things_rough": {
+      "text": "I know man, I know. That's actually why I'm calling. I think I found something that could help",
+      "options": [
+        {
+          "text": "You've been doing too much for me already dude",
+          "next_dialogue": "dont_have_to",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Yeah? Tell me more",
+          "next_dialogue": "the_opportunity",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "dont_have_to": {
+      "text": "Bro, shut up. You were there for me. I'm not gonna just watch you struggle. Plus, this is actually perfect for your skills",
+      "options": [
+        {
+          "text": "Alright alright, what is it?",
+          "next_dialogue": "the_opportunity",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I appreciate it man, really. But I don't want charity",
+          "next_dialogue": "not_charity",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "not_charity": {
+      "text": "It's not charity, it's a real job. I wouldn't recommend you if I didn't think you could do it. Come on, just hear me out",
+      "options": [
+        {
+          "text": "Fine, fine. What's the job?",
+          "next_dialogue": "the_opportunity",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "the_opportunity": {
+      "text": "So, there's this detective I know. Rodriguez. Good guy. They need someone to help with their digital evidence systems. You know, databases, file management, that kind of thing",
+      "options": [
+        {
+          "text": "Wait, like working for the police?",
+          "next_dialogue": "working_police",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "That actually sounds cool. Tell me more",
+          "next_dialogue": "sounds_cool",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I don't know man, that sounds intense",
+          "next_dialogue": "sounds_intense",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "working_police": {
+      "text": "Yeah, basically. But it's mostly backend stuff, you won't be out chasing criminals or anything lol. Just maintaining their systems, organizing case files. Pays decent too",
+      "options": [
+        {
+          "text": "I mean... I guess I could do that",
+          "next_dialogue": "could_do_that",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "That's actually kind of interesting",
+          "next_dialogue": "sounds_cool",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I don't know if I'm qualified for that",
+          "next_dialogue": "not_qualified",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "sounds_intense": {
+      "text": "Nah, it's not like that. It's mostly just IT work, but with cooler stories to tell at parties haha. Plus you'd be helping catch bad guys indirectly. That's gotta count for something",
+      "options": [
+        {
+          "text": "When you put it that way... yeah, okay",
+          "next_dialogue": "could_do_that",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I'm still not sure I'm the right person",
+          "next_dialogue": "not_qualified",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "not_qualified": {
+      "text": "Dude, you're literally overqualified. You were doing way more complex stuff at your old job. This is easy for you, trust me. And Rodriguez is cool, he's not gonna grill you or anything",
+      "options": [
+        {
+          "text": "Alright, you've convinced me. What do I need to do?",
+          "next_dialogue": "convinced",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I appreciate the confidence boost, but...",
+          "next_dialogue": "still_hesitant",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "sounds_cool": {
+      "text": "Right? I thought you'd be into it. Plus it's stable, benefits, all that adult stuff we're supposed to care about now lol",
+      "options": [
+        {
+          "text": "Benefits would be nice... okay I'm in",
+          "next_dialogue": "convinced",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "How'd you even get this connection?",
+          "next_dialogue": "how_connection",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "could_do_that": {
+      "text": "Hell yeah you could. You're smart as hell, don't let the layoff mess with your confidence. You got this",
+      "options": [
+        {
+          "text": "Thanks man. So what's the next step?",
+          "next_dialogue": "convinced",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "How do you even know this detective?",
+          "next_dialogue": "how_connection",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "how_connection": {
+      "text": "Oh, weird story actually. He goes to the same rock climbing gym as me. We got to talking one day and he mentioned they needed tech help. Told him I knew the perfect person",
+      "options": [
+        {
+          "text": "You really went out of your way for this. Thanks bro",
+          "next_dialogue": "thanks_bro",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Alright, I'm sold. Let's do it",
+          "next_dialogue": "convinced",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "still_hesitant": {
+      "text": "Look, I get it. Starting over is scary. But you can't just sit around waiting for the perfect thing to fall in your lap. This is a good opportunity. Real talk",
+      "options": [
+        {
+          "text": "You're right. Okay, I'll do it",
+          "next_dialogue": "convinced",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I need to think about it",
+          "next_dialogue": "need_think",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "thanks_bro": {
+      "text": "That's what friends are for man. You'd do the same for me. Actually, you DID do the same for me when I was crashing on your couch after the divorce",
+      "options": [
+        {
+          "text": "That was different, you were going through something",
+          "next_dialogue": "going_through_something",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Alright, enough with the sentimental stuff. What's next?",
+          "next_dialogue": "convinced",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "going_through_something": {
+      "text": "And you're not? Dude, losing your job sucks. Let me help. That's what we do. So are you in or what?",
+      "options": [
+        {
+          "text": "Yeah. Yeah, I'm in",
+          "next_dialogue": "convinced",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "need_think": {
+      "text": "Fair enough. But don't think too long, Rodriguez wants to fill this position soon. Just... think about it, okay? I really think this could be good for you",
+      "options": [
+        {
+          "text": "Actually, you know what? Let's do it. I'm in",
+          "next_dialogue": "convinced",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I will. Thanks for thinking of me",
+          "next_dialogue": "declined",
+          "conditions": [],
+          "events": [
+            "choose;declined"
+          ]
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "convinced": {
+      "text": "YES! Okay cool, I'll text Rodriguez right now. He'll probably reach out in the next day or two to set something up",
+      "options": [
+        {
+          "text": "Sounds good. Thanks again Marcus, seriously",
+          "next_dialogue": "final_thanks",
+          "conditions": [],
+          "events": [
+            "choose;accept_job"
+          ]
+        },
+        {
+          "text": "What should I expect from him?",
+          "next_dialogue": "expect_rodriguez",
+          "conditions": [],
+          "events": [
+            "choose;accept_job"
+          ]
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "expect_rodriguez": {
+      "text": "He's pretty straightforward, professional but not uptight. Probably just wants to make sure you're competent and not a weirdo lol. You'll be fine",
+      "options": [
+        {
+          "text": "Alright, I can handle that",
+          "next_dialogue": "final_thanks",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "final_thanks": {
+      "text": "Don't mention it bro. Hey, once you get that first paycheck, drinks are on you though haha",
+      "options": [
+        {
+          "text": "Deal. You got it",
+          "next_dialogue": "deal",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Obviously. I owe you big time",
+          "next_dialogue": "owe_big",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "deal": {
+      "text": "Perfect. Alright man, I gotta run. Good luck with Rodriguez!",
+      "options": [
+        {
+          "text": "Thanks Marcus. Talk soon",
+          "next_dialogue": "end",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "owe_big": {
+      "text": "Nah, we're even. Just pay it forward when you're back on your feet, yeah? That's all I ask",
+      "options": [
+        {
+          "text": "You got it. Catch you later",
+          "next_dialogue": "end",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "declined": {
+      "text": "Alright man, no pressure. But seriously, don't wait too long. And hey, if you need anything else, you know where to find me",
+      "options": [
+        {
+          "text": "I appreciate it. Talk to you later",
+          "next_dialogue": "end",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "end": {
+      "text": "Later dude. Take care of yourself",
+      "options": [],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    }
+  },
+  "Rodriguez": {
+    "start": {
+      "text": "This the number Marcus gave me?",
+      "options": [
+        {
+          "text": "Yeah, that's me. You must be Detective Rodriguez",
+          "next_dialogue": "thats_me",
+          "conditions": [
+            "choose;accept_job"
+          ],
+          "events": []
+        },
+        {
+          "text": "Yes, hi. Marcus told me you'd be reaching out",
+          "next_dialogue": "marcus_told",
+          "conditions": [
+            "choose;accept_job"
+          ],
+          "events": []
+        }
+      ],
+      "conditions": [
+        "choose;accept_job"
+      ],
+      "events": [],
+      "next_dialogue": null
+    },
+    "thats_me": {
+      "text": "Good. Marcus speaks highly of you. Says you've got solid experience with database systems and file management",
+      "options": [
+        {
+          "text": "I appreciate him vouching for me. What's the position exactly?",
+          "next_dialogue": "position_details",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Yeah, I've worked with that stuff for a few years now",
+          "next_dialogue": "worked_years",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "marcus_told": {
+      "text": "He did, did he? Well, he's got good things to say about your technical skills. I'm looking for someone to help maintain our evidence management system",
+      "options": [
+        {
+          "text": "What would that involve?",
+          "next_dialogue": "position_details",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I have experience with similar systems",
+          "next_dialogue": "worked_years",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "worked_years": {
+      "text": "That's what I need to hear. This isn't rocket science, but it needs to be done right. Chain of custody matters, data integrity matters",
+      "options": [
+        {
+          "text": "I understand. I'm detail-oriented with that kind of work",
+          "next_dialogue": "detail_oriented",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "What exactly would I be responsible for?",
+          "next_dialogue": "position_details",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "position_details": {
+      "text": "Maintaining our digital evidence system. File organization, database queries, access logs, that kind of thing. Some cases are active, some are cold. All of it needs proper documentation",
+      "options": [
+        {
+          "text": "That sounds manageable. What are the hours like?",
+          "next_dialogue": "hours_pay",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I'd have access to actual case files?",
+          "next_dialogue": "case_access",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "detail_oriented": {
+      "text": "Good. Because one mistake and evidence becomes inadmissible. Can't have that. You comfortable working with sensitive information?",
+      "options": [
+        {
+          "text": "Absolutely. I take confidentiality seriously",
+          "next_dialogue": "confidentiality",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Yes. What kind of information are we talking about?",
+          "next_dialogue": "case_access",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "case_access": {
+      "text": "Within reason, yes. You'd see case files, evidence logs, reports. It's all confidential. Goes without saying you can't discuss any of it outside work",
+      "options": [
+        {
+          "text": "Of course, I understand",
+          "next_dialogue": "confidentiality",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "That's actually kind of interesting. What kind of cases?",
+          "next_dialogue": "what_cases",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "what_cases": {
+      "text": "Homicides mostly. That's my department. Some solved, some not. You'd be helping keep everything organized and accessible when we need it",
+      "options": [
+        {
+          "text": "Got it. I can handle that",
+          "next_dialogue": "confidentiality",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "confidentiality": {
+      "text": "Good. Standard hours, decent pay, benefits after 90 days. Background check required obviously. That a problem?",
+      "options": [
+        {
+          "text": "No problem at all",
+          "next_dialogue": "no_problem",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Nope, clean record. When would I start?",
+          "next_dialogue": "when_start",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "hours_pay": {
+      "text": "Nine to five, Monday through Friday. Occasional overtime if we're working something urgent. Pay's competitive for the work. Benefits after probation period",
+      "options": [
+        {
+          "text": "That works for me. What's next?",
+          "next_dialogue": "whats_next",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Sounds fair. I'm interested",
+          "next_dialogue": "interested",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "no_problem": {
+      "text": "Alright. I'll send you the application and background check forms. Fill those out, get them back to me by end of week. If everything checks out, you can start Monday after next",
+      "options": [
+        {
+          "text": "Perfect. I'll get those to you ASAP",
+          "next_dialogue": "final_accept",
+          "conditions": [],
+          "events": [
+            "choose;accept_rodriguez_job"
+          ]
+        },
+        {
+          "text": "Sounds good. Thanks for the opportunity",
+          "next_dialogue": "final_accept",
+          "conditions": [],
+          "events": [
+            "choose;accept_rodriguez_job"
+          ]
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "when_start": {
+      "text": "Pending background check, couple weeks. I'll send you the paperwork. Get it back to me by Friday and we can move forward",
+      "options": [
+        {
+          "text": "Will do. Thank you",
+          "next_dialogue": "final_accept",
+          "conditions": [],
+          "events": [
+            "choose;accept_rodriguez_job"
+          ]
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "whats_next": {
+      "text": "Background check paperwork. I'll email it over. Once that clears, you're in. Should take about a week",
+      "options": [
+        {
+          "text": "Great, I'll watch for that email",
+          "next_dialogue": "final_accept",
+          "conditions": [],
+          "events": [
+            "choose;accept_rodriguez_job"
+          ]
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "interested": {
+      "text": "Good. I'll send you the application forms. Need them back by Friday if you want to start in two weeks",
+      "options": [
+        {
+          "text": "You got it. Thanks Detective",
+          "next_dialogue": "final_accept",
+          "conditions": [],
+          "events": [
+            "choose;accept_rodriguez_job"
+          ]
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "final_accept": {
+      "text": "Marcus was right about you. Seems like a good fit. Welcome aboard",
+      "options": [
+        {
+          "text": "Thank you. Looking forward to it",
+          "next_dialogue": "end",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "end": {
+      "text": "See you in a couple weeks",
+      "options": [],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    }
+  }
+}

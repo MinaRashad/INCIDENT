@@ -1,0 +1,59 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": ["string", "null"],
+                    "description": "The message sent to the player. null if this node only triggers events."
+                },
+                "options": {
+                    "type": "array",
+                    "description": "Player choices shown after this node. Empty if no input is needed.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "text": {
+                                "type": "string",
+                                "description": "The option displayed to the player."
+                            },
+                            "next_dialogue": {
+                                "type": "string",
+                                "description": "The node name to jump to when this option is chosen."
+                            },
+                            "conditions": {
+                                "type": "array",
+                                "description": "Flags that must exist in history for this option to be visible.",
+                                "items": { "type": "string" }
+                            },
+                            "events": {
+                                "type": "array",
+                                "description": "Flags written to history when this option is chosen.",
+                                "items": { "type": "string" }
+                            }
+                        },
+                        "required": ["text", "next_dialogue", "conditions", "events"]
+                    }
+                },
+                "conditions": {
+                    "type": "array",
+                    "description": "Flags that must exist in history before this node is processed.",
+                    "items": { "type": "string" }
+                },
+                "events": {
+                    "type": "array",
+                    "description": "Flags written to history when this node is processed.",
+                    "items": { "type": "string" }
+                },
+                "next_dialogue": {
+                    "type": ["string", "null"],
+                    "description": "The name of the next node to process. null if the story ends or waits for player input."
+                }
+            },
+            "required": ["options", "conditions", "events"]
+        }
+    }
+}
