@@ -704,11 +704,11 @@
       "next_dialogue": null
     },
     "final_accept": {
-      "text": "Marcus was right about you. Seems like a good fit. Welcome aboard",
+      "text": "Before we make this official, I'm sending you the onboarding documents. Password is delta-7-7-echo. Review them and get back to me.",
       "options": [
         {
-          "text": "Thank you. Looking forward to it",
-          "next_dialogue": "end",
+          "text": "Got it, I'll take a look now",
+          "next_dialogue": "documents_sent",
           "conditions": [],
           "events": []
         }
@@ -717,11 +717,161 @@
       "events": [],
       "next_dialogue": null
     },
-    "end": {
-      "text": "See you in a couple weeks",
-      "options": [],
+    "documents_sent": {
+      "text": "Take your time. Let me know when you're done.",
+      "options": [
+        {
+          "text": "Alright, I've gone through everything. Looks fine to me",
+          "next_dialogue": "sure_1",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "I found some issues",
+          "next_dialogue": "found_issues",
+          "conditions": [
+            "path;assets/documents/On boarding/Offer Letter",
+            "path;assets/documents/On boarding/Employment Contract",
+            "path;assets/documents/On boarding/NDA",
+            "path;assets/documents/On boarding/Employee Handbook"
+          ],
+          "events": []
+        }
+      ],
       "conditions": [],
       "events": [],
+      "next_dialogue": null
+    },
+    "sure_1": {
+      "text": "You sure about that? Read carefully.",
+      "options": [
+        {
+          "text": "Yeah, everything checks out",
+          "next_dialogue": "sure_2",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Actually, hold on. I did find something",
+          "next_dialogue": "found_issues",
+          "conditions": [
+          ],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "sure_2": {
+      "text": "I'm going to ask you one more time. You're certain?",
+      "options": [
+        {
+          "text": "Yes, I'm certain",
+          "next_dialogue": "failed",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Wait. No.",
+          "next_dialogue": "found_issues",
+          "conditions": [
+          ],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "failed": {
+      "text": "Then you're not the right person for this job. We deal with evidence all day. If you can't catch an inconsistency in your own paperwork, I can't trust you with a case file. We're done here.",
+      "options": [
+        {
+          "text": "I understand",
+          "next_dialogue": "end_fired",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "end_fired": {
+      "text": "Good luck.",
+      "options": [],
+      "conditions": [],
+      "events": [
+        "choose;notread"
+      ],
+      "next_dialogue": null
+    },
+    "found_issues": {
+      "text": "What?",
+      "options": [
+        {
+          "text": "The probation period. Offer letter says 30 days, but the contract and handbook both say 90",
+          "next_dialogue": "correct_contradiction",
+          "conditions": [
+            "path;assets/documents/On boarding/Offer Letter",
+            "path;assets/documents/On boarding/Employment Contract",
+            "contradiction;Offer Letter;Employee Handbook;5;"
+          ],
+          "events": [
+            "choose;flag_probation"
+          ]
+        },
+        {
+          "text": "The non-compete clause is not clear",
+          "next_dialogue": "correct_contradiction",
+          "conditions": [
+            "path;assets/documents/On boarding/Employment Contract",
+            "path;assets/documents/On boarding/NDA",
+            "contradiction;Employment Contract;NDA;6;"
+          ],
+          "events": [
+            "choose;flag_non_compete"
+          ]
+        },
+        {
+          "text": "Actually, never mind. Everything looks fine",
+          "next_dialogue": "sure_1",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "correct_contradiction": {
+      "text": "Good catch. Most people dont read. Welcome to the division.",
+      "options": [
+        {
+          "text": "So it was a test",
+          "next_dialogue": "hired",
+          "conditions": [],
+          "events": []
+        },
+        {
+          "text": "Glad I read carefully",
+          "next_dialogue": "hired",
+          "conditions": [],
+          "events": []
+        }
+      ],
+      "conditions": [],
+      "events": [],
+      "next_dialogue": null
+    },
+    "hired": {
+      "text": "See you Monday.",
+      "options": [],
+      "conditions": [],
+      "events": [
+        "choose;passinterview"
+      ],
       "next_dialogue": null
     }
   }
