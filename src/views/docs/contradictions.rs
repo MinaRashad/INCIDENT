@@ -45,14 +45,6 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
                      &Entry { path: first_doc.to_path_buf() },
                      &Entry { path: second_document.to_path_buf() });
 
-
-    terminal::clear_screen();
-    println!("{first_doc:?}");
-    println!("{second_document:?}");
-    println!("{first_tags:?}");
-    println!("{second_tags:?}");
-    menu_components::wait_for_input();
-
     // if they have nothing in common
     if shared.is_empty() {
         print_error("The documents have nothing in common!".to_string());
@@ -77,6 +69,8 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
     // if they say the same thing
     if tag1.value == tag2.value {
         print_error(format!("The documents say the same thing: {}", tag1.value));
+        return GameState::OpenPath(first_doc);
+
     }
 
     let contradiction = Contradiction{
