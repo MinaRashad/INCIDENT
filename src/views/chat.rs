@@ -16,7 +16,7 @@ use std::sync::OnceLock;
 
 
 
-use crate::data::{self, chat::{self, Choice, DialogueNode, DialogueNodeStatus, get_node_status}};
+use crate::{data::{self, chat::{self, Choice, DialogueNode, DialogueNodeStatus, get_node_status}}, events::{EventType, get_history}};
 use crate::menu_components;
 use crate::GameState;
 use crate::sound;
@@ -262,7 +262,9 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
             sound::play(sound::SoundCategory::GUIFeedback);
             chat_app_state.current_chat_selection.select_next();
             chat_app_state.current_choice_selection = 0; // reset choice selection
-            chat_app_state.chat_scroll = 0; // reset scroll
+            
+            update_chat(chat_app_state);
+            chat_app_state.chat_scroll = chat_app_state.chatlog.messages.len().saturating_sub(3); // reset scroll
 
         }
         else{
@@ -277,7 +279,9 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
             sound::play(sound::SoundCategory::GUIFeedback);
             chat_app_state.current_chat_selection.select_previous();
             chat_app_state.current_choice_selection = 0; // reset choice selection
-            chat_app_state.chat_scroll = 0; // reset scroll
+            
+            update_chat(chat_app_state);
+            chat_app_state.chat_scroll = chat_app_state.chatlog.messages.len().saturating_sub(3); // reset scroll
 
         }
         else{
@@ -361,14 +365,38 @@ fn update_chat(chat_app_state:&mut ChatAppState)
     let map = CHATS.get()?;
     let static_node = data::chat::get_current_dialogue_node(npc, map)?;
     let npc_status = data::chat::get_node_status(npc);
-    // add choices if we are waiting for a response
+
+
+    let history = get_history(0);
+    // add valid choices if we are waiting for a response
     if npc_status == DialogueNodeStatus::WaitingPlayerResponse{
-        chat_app_state.choices = static_node.options.clone();
+        chat_app_state.choices = valid_choices(&mut static_node.options.clone(), history);
     }else{
         chat_app_state.choices.clear();
     }
 
     Some(())
+}
+
+fn valid_choices(all_choices:&mut Vec<Choice>, history: Vec<EventType>)-> Vec<Choice>{
+
+    let mut valid = vec![];
+
+    'outer_loop: for choice in all_choices{
+        let conditions = &choice.conditions;
+        
+        for condition in conditions
+        {
+            if !history.contains(&EventType::from_str(condition))
+            {
+                continue 'outer_loop;
+            }
+        }
+
+        valid.push(choice.clone());
+    }
+
+    valid
 }
 
 fn current_npc(chat_app_state:&mut ChatAppState)->Option<NPC>{

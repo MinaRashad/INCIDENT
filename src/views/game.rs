@@ -1,3 +1,6 @@
+use crate::data::player;
+use crate::data::player::get_player_name;
+use crate::data::player::is_hired;
 use crate::terminal;
 use crate::menu_components;
 use crate::GameState;
@@ -7,8 +10,83 @@ use crate::sound;
 use std::thread;
 use std::time::Duration;
 
-pub fn start_up()->GameState{
 
+pub fn start_up_personal() {
+    sound::boot_play();
+
+    // Generic BIOS POST
+    let bios_header = terminal::foreground_color(
+        "PHOENIX BIOS v4.0 - Copyright 2019".to_string(),
+        [150, 150, 150]
+    );
+    animate::typer(&format!("{}\n", bios_header), 3, false);
+    thread::sleep(Duration::from_millis(100));
+
+    animate::typer("CPU: Intel Core i5-9400 @ 2.90GHz\n", 5, false);
+    animate::typer("Memory check: ", 8, false);
+    let mem_ok = terminal::foreground_color("16384MB OK\n".to_string(), [0, 255, 0]);
+    animate::typer(&mem_ok, 3, false);
+    animate::typer("Detecting drives... ", 8, false);
+    let disk_ok = terminal::foreground_color("OK\n".to_string(), [0, 255, 0]);
+    animate::typer(&disk_ok, 3, false);
+
+    thread::sleep(Duration::from_millis(300));
+    terminal::clear_screen();
+
+    // Generic OS boot — just a plain desktop environment
+    animate::typer("Starting services...\n", 6, false);
+
+    let ok_msg = |text: &str| {
+        animate::loading_bar(10);
+        terminal::foreground_color(format!("[  OK  ] {}", text), [0, 200, 0])
+    };
+    animate::typer(&format!("{}\n", ok_msg("Started File System")), 4, false);
+    animate::typer(&format!("{}\n", ok_msg("Started Network Manager")), 4, false);
+    animate::typer(&format!("{}\n", ok_msg("Started Audio Service")), 4, false);
+    animate::typer(&format!("{}\n", ok_msg("Reached graphical target")), 4, false);
+
+    thread::sleep(Duration::from_millis(400));
+    terminal::clear_screen();
+
+    // Plain desktop login — just your name, no badge, no department
+    let separator = terminal::foreground_color(
+        "─────────────────────────────────────────".to_string(),
+        [100, 100, 100]
+    );
+    animate::typer(&format!("{}\n", separator), 1, false);
+    animate::typer("       Welcome\n", 1, false);
+    animate::typer(&format!("{}\n\n", separator), 1, false);
+
+    let user_prompt = terminal::foreground_color("Username: ".to_string(), [200, 200, 200]);
+    let name = get_player_name().unwrap_or("*******".to_string());
+
+    animate::typer(&user_prompt, 15, false);
+    thread::sleep(Duration::from_millis(800));
+    animate::typer(&(name + "\n"), 50, true);
+
+    let pass_prompt = terminal::foreground_color("Password: ".to_string(), [200, 200, 200]);
+    animate::typer(&pass_prompt, 15, false);
+    thread::sleep(Duration::from_millis(500));
+    animate::typer("*******\n", 80, true);
+    thread::sleep(Duration::from_millis(600));
+
+    terminal::clear_screen();
+
+    // Just a plain terminal prompt — no dashboard, no case files
+    if let Ok(date) = menu_components::date() {
+        animate::typer(
+            &format!("Last login: {}/{}/{} 09:04:31\n\n", date[1], date[2], date[0]),
+            6, false
+        );
+    }
+
+    // let prompt = terminal::foreground_color("pc@home:~$ ".to_string(), [0, 255, 0]);
+    // animate::typer(&prompt, 20, false);
+    // thread::sleep(Duration::from_millis(500));
+
+}
+
+pub fn start_up_police() {
     sound::boot_play();
     menu_components::print_logo();
     // Police system boot sequence
@@ -193,7 +271,17 @@ pub fn start_up()->GameState{
     animate::typer(&evidence_item("5", "Witness interviews\n"), 8, false);
     
     thread::sleep(Duration::from_millis(300));
-    
+
+}
+
+pub fn start_up()->GameState{
+
+    if is_hired(){
+        start_up_police();
+    }else{
+        start_up_personal();
+    }
+
     menu_components::wait_for_input();
     GameState::MainConsole
 }
