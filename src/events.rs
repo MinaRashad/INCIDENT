@@ -102,6 +102,12 @@ pub fn init_events()
     map.insert(EventType::OnDialogueChoice("declined".to_string()),
      Effect::End(Ending::Refusal));
 
+    map.insert(EventType::OnDialogueChoice("notread".to_string()),
+     Effect::End(Ending::FailedInterview));
+
+    map.insert(EventType::OnDialogueChoice("passinterview".to_string()),
+     Effect::End(Ending::Hired));
+     
     return map;
 }
 

@@ -9,19 +9,26 @@ use crate::data;
 // Ending
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Ending{
-    Refusal
+    Refusal,
+    FailedInterview,
+    /// Demo only
+    Hired
 }
 
 impl Ending {
     pub fn to_str(&self) -> &str {
         match self {
             Ending::Refusal => "Refusal",
+            Ending::Hired => "Hired",
+            Ending::FailedInterview => "Unhirable"
         }
     }
 
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "Refused" => Some(Ending::Refusal),
+            "Hired" => Some(Ending::Hired),
+            "Unhirable" => Some(Ending::FailedInterview),
             _ => None,
         }
     }
@@ -60,6 +67,26 @@ pub fn show_ending(ending: Ending)
             let text = terminal::center_multiline(text.to_string());
             terminal::faint(text)
             
+        },
+        Ending::FailedInterview => {
+            let _sink = sound::play_forever(SoundCategory::Sad);
+            let text = "You Fucked up.\n\
+                        Maybe you are not as hirable as Marcus thought\n\
+                        ";
+            
+            let text = terminal::center_multiline(text.to_string());
+            terminal::faint(text)
+            
+        },
+        Ending::Hired => {
+            let _sink = sound::play_forever(SoundCategory::LowHumming);
+            let text = "You have successfully passed the Job interview.\n\
+                        You have so many interesting cases to solve.\n\
+                        However the game is not complete yet :( \n\
+                        Please support if you like the idea!";
+            
+            let text = terminal::center_multiline(text.to_string());
+            terminal::faint(text)
         }
     };
     
