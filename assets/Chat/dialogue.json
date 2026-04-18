@@ -811,11 +811,23 @@
       "text": "What?",
       "options": [
         {
-          "text": "The probation period. Offer letter says 30 days, but the contract and handbook both say 90",
+          "text": "The probation period. Offer letter says 30 days, but the handbook says 90",
           "next_dialogue": "correct_contradiction",
           "conditions": [
             "path;assets/documents/On boarding/Offer Letter",
             "path;assets/documents/On boarding/Employment Contract",
+            "contradiction;Offer Letter;Employment Contract;5;"
+          ],
+          "events": [
+            "choose;flag_probation"
+          ]
+        },
+        {
+          "text": "The probation period. Offer letter says 30 days, but the contract says 90",
+          "next_dialogue": "correct_contradiction",
+          "conditions": [
+            "path;assets/documents/On boarding/Offer Letter",
+            "path;assets/documents/On boarding/Employment Handbook",
             "contradiction;Offer Letter;Employee Handbook;5;"
           ],
           "events": [

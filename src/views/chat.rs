@@ -335,6 +335,8 @@ fn handle_key_input(k: KeyEvent, chat_app_state:&mut ChatAppState){
         let choice = &chat_app_state.choices[choice_idx];
         let mut dialogue_node = choice.to_dialogue_node();
 
+        chat_app_state.current_choice_selection = 0;
+
         data::chat::process_dialogue_node(&mut dialogue_node, 
             chat::ContactChar::Player, 
             chat::ContactChar::NPC(npc));
