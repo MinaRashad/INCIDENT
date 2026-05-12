@@ -173,104 +173,104 @@ impl ContactChar{
     }
 }
 
-pub fn spawn_chat_master(){
-    thread::spawn(run_chat_master);
+/// Persistent state for the chat master between `tick()` calls (the loaded
+/// dialogue tree, the last-seen history timestamp, and every event seen so
+/// far). On native this lives on the chat-master thread; on wasm it lives on
+/// the (single) game thread.
+struct ChatMasterState {
+    chats: DialogueTree,
+    timestamp: u32,
+    known_history: HashSet<EventType>,
 }
 
-/// # run_chat_master
-/// this function is runs by the chat master
-/// It does the following in an infinite loop:
-/// - Checks if there are new conditions unlocked
-/// - If there is, checks all npcs current dialogue 
-fn run_chat_master(){
-    
-    // initialization
-    
-    data::init_db();   
+thread_local! {
+    static CHAT_MASTER: std::cell::RefCell<Option<ChatMasterState>> =
+        const { std::cell::RefCell::new(None) };
+}
 
-    let chats = read_dialogue_data()
-                                .expect("Failed to get a hashmap of the messages");
-    let mut timestamp:u32 = 0;
+/// One pass of the chat master: pick up new history, then for each NPC whose
+/// current dialogue node is unprocessed and whose conditions are now met, send
+/// the node's message(s) and advance it. Idempotent — a processed node is
+/// skipped until it advances. On native this is looped on a background thread
+/// (`run_chat_master`); on wasm (no threads) it's driven from the game loop.
+pub fn tick() {
+    CHAT_MASTER.with(|cell| {
+        let mut guard = cell.borrow_mut();
+        let st = guard.get_or_insert_with(|| ChatMasterState {
+            chats: read_dialogue_data().unwrap_or_default(),
+            timestamp: 0,
+            known_history: HashSet::new(),
+        });
 
-    let mut known_history:HashSet<EventType> = HashSet::new();
-
-    loop {
-        // first we check the history to see new events
-        let new_history = get_history(timestamp);
-
-        // if there is add it to the hashmap
-        for event in &new_history{
-            known_history.insert(event.clone());
+        let new_history = get_history(st.timestamp);
+        for event in &new_history {
+            st.known_history.insert(event.clone());
+        }
+        // Only process when there's been new history (matches the original
+        // loop's behaviour; the start-game event kicks this off).
+        if new_history.is_empty() {
+            return;
         }
 
-        // ideally we want to process the dialogues only
-        // if we saw new history
-        // TODO add a start game event
-        // because otherwise the loop will end here at the start 
-        // of the game
-        if new_history.is_empty(){
-            thread::sleep(Duration::from_secs(1));
-            continue;
-        }
-
-        // now we have a history we should process each
-        // npc dialogue
         let npc_node_map = get_dialogue_map();
-        for npc in NPC::ALL{
+        for npc in NPC::ALL {
             let node_name = match npc_node_map.get(&npc) {
-                    Some(s)=> s,
-                     _ => continue};
-            
-
-            let dialogue_map = match chats.get(&npc) {
-                Some(map)=> map,
-                None => continue
+                Some(s) => s,
+                _ => continue,
             };
-
+            let dialogue_map = match st.chats.get(&npc) {
+                Some(map) => map,
+                None => continue,
+            };
             let dialogue_node = match dialogue_map.get(node_name) {
-                Some(node)=> node,
-                None => continue
+                Some(node) => node,
+                None => continue,
             };
 
             let state = get_node_status(npc);
-
-            // Only continue if the node is not processed yet
-            if state == DialogueNodeStatus::Processed ||
-               state == DialogueNodeStatus::WaitingPlayerResponse {
+            if state == DialogueNodeStatus::Processed
+                || state == DialogueNodeStatus::WaitingPlayerResponse
+            {
                 continue;
             }
 
-            
-            
-            // first make sure the conditions are satesfied before we continue
+            // conditions must all be satisfied
             let mut valid_to_process = true;
-            for condition in &dialogue_node.conditions{
-                if !known_history.contains(&EventType::from_str(condition)){
+            for condition in &dialogue_node.conditions {
+                if !st.known_history.contains(&EventType::from_str(condition)) {
                     valid_to_process = false;
                     break;
                 }
             }
-            if !valid_to_process {continue;}
-            
-            // now we are graunteed that the node satesfied its conditions
-            // and
-            // first mark it as processed
+            if !valid_to_process {
+                continue;
+            }
+
+            // mark processed FIRST (an effect may kill the process)
             set_node_status(npc, DialogueNodeStatus::Processed);
-
             process_dialogue_node(dialogue_node, ContactChar::NPC(npc), ContactChar::Player);
-
         }
 
-        // update timestamp
-        timestamp = SystemTime::now()
+        st.timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or(Duration::from_secs(0))
             .as_secs() as u32;
+    });
+}
 
+#[cfg(not(target_arch = "wasm32"))]
+pub fn spawn_chat_master() {
+    thread::spawn(run_chat_master);
+}
+
+/// Native chat-master thread: `tick()` once a second forever.
+#[cfg(not(target_arch = "wasm32"))]
+fn run_chat_master() {
+    data::init_db();
+    loop {
+        tick();
         thread::sleep(Duration::from_secs(1));
     }
-    
-
 }
 
 

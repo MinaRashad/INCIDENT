@@ -1,0 +1,826 @@
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-bg: #161b22;
+            --panel-bg: #21262d;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --border-color: #30363d;
+            --node-bg: #2d333b;
+            --node-header: #383e47;
+            --error-color: #f85149;
+            --success-color: #3fb950;
+            --next-line: #58a6ff;
+            --opt-line: #3fb950;
+            --sidebar-width: 300px;
+            --inspector-width: 380px;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        #app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            transition: all 0.3s ease;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            transition: margin-left 0.3s ease;
+        }
+
+        #sidebar.collapsed {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #npc-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .npc-item {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .npc-item:hover {
+            background-color: var(--panel-bg);
+        }
+
+        .npc-item.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Canvas/Graph Styling */
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            background-image: 
+                linear-gradient(var(--border-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            overflow: hidden;
+            cursor: grab;
+            background-color: var(--bg-color);
+        }
+        
+        #canvas-container:active { cursor: grabbing; }
+
+        #graph-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            width: 20000px;
+            height: 20000px;
+            transform-origin: 0 0;
+        }
+
+        #nodes-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 20000px;
+            height: 20000px;
+            transform-origin: 0 0;
+        }
+
+        .node {
+            position: absolute;
+            width: 220px;
+            background-color: var(--node-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            cursor: default;
+            user-select: none;
+            transition: opacity 0.2s, border-color 0.2s;
+        }
+
+        .node:hover {
+            border-color: #444;
+        }
+
+        .node.selected {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        .node-header {
+            background-color: var(--node-header);
+            padding: 6px 10px;
+            border-radius: 5px 5px 0 0;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            cursor: move;
+        }
+
+        .node-body {
+            padding: 10px;
+            font-size: 13px;
+            max-height: 80px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            color: #8b949e;
+        }
+
+        .node-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 5px 10px;
+            font-size: 10px;
+            color: #484f58;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Inspector Panel */
+        #inspector {
+            width: var(--inspector-width);
+            background-color: var(--sidebar-bg);
+            border-left: 1px solid var(--border-color);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            transition: margin-right 0.3s ease;
+        }
+
+        #inspector.collapsed {
+            margin-right: calc(-1 * var(--inspector-width));
+        }
+
+        .inspector-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: bold;
+        }
+
+        .inspector-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        h3, h4 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, textarea, select {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+        
+        button {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        button:hover { background-color: var(--border-color); }
+        button.primary { background-color: var(--accent-color); border-color: var(--accent-color); color: white; }
+        button.danger { color: var(--error-color); }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .tag {
+            background-color: var(--panel-bg);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .tag .remove {
+            margin-left: 6px;
+            cursor: pointer;
+            color: #484f58;
+        }
+        .tag .remove:hover { color: var(--error-color); }
+
+        /* Search & Overlay */
+        #search-box {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .toolbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+            background: rgba(13, 17, 23, 0.8);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .toggle-btn {
+            position: fixed;
+            top: 20px;
+            z-index: 30;
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--accent-color);
+        }
+
+        #toggle-left { left: 20px; }
+        #toggle-right { right: 20px; }
+
+        .option-editor {
+            background-color: var(--panel-bg);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .option-editor::before {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--success-color);
+            border-radius: 6px 0 0 6px;
+        }
+
+        /* SVG Legend */
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(13, 17, 23, 0.8);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            border: 1px solid var(--border-color);
+            pointer-events: none;
+            z-index: 20;
+        }
+        .legend-item { display: flex; align-items: center; margin-bottom: 4px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 2px; margin-right: 8px; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- TOGGLE BUTTONS -->
+    <button class="toggle-btn" id="toggle-left" onclick="toggleSidebar('sidebar')">☰</button>
+    <button class="toggle-btn" id="toggle-right" onclick="toggleSidebar('inspector')">✎</button>
+
+    <!-- LEFT SIDEBAR -->
+    <div id="sidebar">
+        <div class="sidebar-header" style="padding-left: 70px;">
+            <span>NPCs</span>
+            <button onclick="addNPC()" title="Add New NPC">+</button>
+        </div>
+        <div id="search-box">
+            <input type="text" id="node-search" placeholder="Search nodes or text..." oninput="searchNodes()">
+        </div>
+        <div id="npc-list"></div>
+        <div style="padding: 15px; border-top: 1px solid var(--border-color); font-size: 11px; color: #484f58;">
+            INCIDENT Dialogue Engine v1.0
+        </div>
+    </div>
+
+    <!-- MAIN CANVAS -->
+    <div id="canvas-container" onmousedown="startCanvasPan(event)">
+        <svg id="graph-svg">
+            <defs>
+                <marker id="arrow-next" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff" />
+                </marker>
+                <marker id="arrow-opt" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#3fb950" />
+                </marker>
+            </defs>
+        </svg>
+        <div id="nodes-layer"></div>
+        
+        <div class="toolbar">
+            <button class="primary" onclick="exportJSON()">Export</button>
+            <button onclick="importJSON()">Import</button>
+            <button onclick="addNode()">+ Node</button>
+            <button onclick="autoLayout()">Layout</button>
+            <button onclick="recenter()">Recenter</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background: var(--next-line)"></div> Direct Connection</div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--opt-line)"></div> Player Choice Connection</div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--success-color)"></div> Start Node (start)</div>
+        </div>
+    </div>
+
+    <!-- RIGHT INSPECTOR -->
+    <div id="inspector">
+        <div class="inspector-header" style="text-align: right; padding-right: 70px;">Node Properties</div>
+        <div class="inspector-scroll" id="inspector-content">
+            <p style="color: #484f58; text-align: center; margin-top: 50px;">Select a node to inspect its properties</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State
+    let dialogueData = {};
+    let currentNPC = null;
+    let selectedNodeId = null;
+    let nodesPos = {}; // Persistent positions
+    
+    // UI Refs
+    const npcListEl = document.getElementById('npc-list');
+    const nodesLayerEl = document.getElementById('nodes-layer');
+    const svgEl = document.getElementById('graph-svg');
+    const inspectorEl = document.getElementById('inspector-content');
+    const canvasContainer = document.getElementById('canvas-container');
+
+    // --- Core Logic ---
+
+    function init() {
+        // Load default/empty state
+        dialogueData = {
+            "Marcus": {
+                "start": { "text": "New conversation...", "options": [], "conditions": [], "events": [], "next_dialogue": null }
+            }
+        };
+        renderNPCList();
+        selectNPC("Marcus");
+    }
+
+    // --- I/O ---
+
+    function exportJSON() {
+        const json = JSON.stringify(dialogueData, null, 4);
+        const blob = new Blob([json], {type: "application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "dialogue.json";
+        a.click();
+    }
+
+    function importJSON() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = ev => {
+                try {
+                    dialogueData = JSON.parse(ev.target.result);
+                    renderNPCList();
+                    const firstNPC = Object.keys(dialogueData)[0];
+                    if (firstNPC) selectNPC(firstNPC);
+                } catch(e) { alert("Invalid JSON file"); }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    // --- Rendering ---
+
+    function renderNPCList() {
+        npcListEl.innerHTML = '';
+        Object.keys(dialogueData).forEach(npc => {
+            const div = document.createElement('div');
+            div.className = `npc-item ${currentNPC === npc ? 'active' : ''}`;
+            div.innerHTML = `<span>${npc}</span>`;
+            div.onclick = () => selectNPC(npc);
+            npcListEl.appendChild(div);
+        });
+    }
+
+    function selectNPC(npc) {
+        currentNPC = npc;
+        selectedNodeId = null;
+        renderNPCList();
+        renderGraph();
+        renderInspector();
+    }
+
+    function renderGraph() {
+        nodesLayerEl.innerHTML = '';
+        if (!currentNPC || !dialogueData[currentNPC]) return;
+
+        const nodes = dialogueData[currentNPC];
+        Object.keys(nodes).forEach((nodeId, i) => {
+            const node = nodes[nodeId];
+            const div = document.createElement('div');
+            div.className = `node ${selectedNodeId === nodeId ? 'selected' : ''}`;
+            div.id = `node-${nodeId}`;
+            
+            if (!nodesPos[currentNPC]) nodesPos[currentNPC] = {};
+            if (!nodesPos[currentNPC][nodeId]) {
+                nodesPos[currentNPC][nodeId] = { x: 100 + (i % 4) * 300, y: 100 + Math.floor(i / 4) * 200 };
+            }
+
+            const pos = nodesPos[currentNPC][nodeId];
+            div.style.left = pos.x + 'px';
+            div.style.top = pos.y + 'px';
+
+            div.innerHTML = `
+                <div class="node-header" onmousedown="startNodeDrag(event, '${nodeId}')">
+                    <span>${nodeId}</span>
+                    <span style="color: ${nodeId === 'start' ? 'var(--success-color)' : '#484f58'}">●</span>
+                </div>
+                <div class="node-body">${node.text || '<i>[Event Node]</i>'}</div>
+                <div class="node-footer">
+                    <span>${node.options.length} opt</span>
+                    <span>${node.next_dialogue ? '→' : ''}</span>
+                </div>
+            `;
+
+            div.onclick = (e) => {
+                e.stopPropagation();
+                selectNode(nodeId);
+            };
+
+            nodesLayerEl.appendChild(div);
+        });
+
+        drawConnections();
+    }
+
+    function drawConnections() {
+        const markers = svgEl.querySelector('defs').cloneNode(true);
+        svgEl.innerHTML = '';
+        svgEl.appendChild(markers);
+
+        if (!currentNPC) return;
+        const nodes = dialogueData[currentNPC];
+
+        Object.keys(nodes).forEach(nodeId => {
+            const node = nodes[nodeId];
+            const start = nodesPos[currentNPC][nodeId];
+
+            if (node.next_dialogue && nodes[node.next_dialogue]) {
+                const end = nodesPos[currentNPC][node.next_dialogue];
+                drawCurve(start.x + 220, start.y + 40, end.x, end.y + 40, 'var(--next-line)', 'arrow-next', nodeId === selectedNodeId || node.next_dialogue === selectedNodeId);
+            }
+
+            node.options.forEach((opt, idx) => {
+                if (opt.next_dialogue && nodes[opt.next_dialogue]) {
+                    const end = nodesPos[currentNPC][opt.next_dialogue];
+                    const yOffset = 70 + (idx * 5); // Slight stagger for multiple options
+                    drawCurve(start.x + 220, start.y + yOffset, end.x, end.y + yOffset, 'var(--opt-line)', 'arrow-opt', nodeId === selectedNodeId || opt.next_dialogue === selectedNodeId);
+                }
+            });
+        });
+    }
+
+    function drawCurve(x1, y1, x2, y2, color, markerId, isHighlighted) {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        
+        // Better Bezier calculation for cleaner "S" curves
+        const dx = Math.abs(x1 - x2);
+        const cp = Math.max(100, dx / 2); // Ensure a minimum curvature
+        
+        const d = `M ${x1} ${y1} C ${x1 + cp} ${y1}, ${x2 - cp} ${y2}, ${x2} ${y2}`;
+        path.setAttribute("d", d);
+        path.setAttribute("stroke", color);
+        path.setAttribute("stroke-width", isHighlighted ? "3" : "1.5");
+        path.setAttribute("stroke-opacity", isHighlighted ? "1" : "0.5");
+        path.setAttribute("fill", "transparent");
+        path.setAttribute("marker-end", `url(#${markerId})`);
+        
+        // Shadow for highlight
+        if (isHighlighted) {
+            path.setAttribute("filter", "drop-shadow(0 0 4px " + color + ")");
+        }
+
+        svgEl.appendChild(path);
+    }
+
+    // --- Inspector ---
+
+    function selectNode(id) {
+        selectedNodeId = id;
+        renderGraph();
+        renderInspector();
+    }
+
+    function renderInspector() {
+        if (!selectedNodeId || !currentNPC) {
+            inspectorEl.innerHTML = '<p style="color: #484f58; text-align: center; margin-top: 50px;">Select a node to inspect</p>';
+            return;
+        }
+
+        const node = dialogueData[currentNPC][selectedNodeId];
+        
+        inspectorEl.innerHTML = `
+            <div class="form-group">
+                <label>Node ID (Unique Name)</label>
+                <input type="text" value="${selectedNodeId}" onchange="renameNode(this.value)" ${selectedNodeId === 'start' ? 'disabled' : ''}>
+            </div>
+            
+            <div class="form-group">
+                <label>Dialogue Text</label>
+                <textarea rows="5" placeholder="What the NPC says..." oninput="updateNode('text', this.value)">${node.text || ''}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Next Dialogue (Direct Jump)</label>
+                <input type="text" list="node-list" value="${node.next_dialogue || ''}" oninput="updateNode('next_dialogue', this.value)" placeholder="Target node ID...">
+            </div>
+
+            <div class="form-group">
+                <label>Conditions (Required to reach node)</label>
+                <input type="text" placeholder="Press Enter to add flag..." onkeydown="if(event.key==='Enter'){addFlag('conditions', this.value); this.value=''}">
+                <div class="tag-list">${renderTags('conditions', node.conditions)}</div>
+            </div>
+
+            <div class="form-group">
+                <label>Events (Triggered on entry)</label>
+                <input type="text" placeholder="Press Enter to add flag..." onkeydown="if(event.key==='Enter'){addFlag('events', this.value); this.value=''}">
+                <div class="tag-list">${renderTags('events', node.events)}</div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 25px 0;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0; font-size: 13px;">PLAYER OPTIONS</h4>
+                <button class="primary" onclick="addOption()">+ Add</button>
+            </div>
+
+            <div id="options-area">
+                ${node.options.map((opt, i) => `
+                    <div class="option-editor">
+                        <div class="form-group">
+                            <label>Choice Text</label>
+                            <input type="text" value="${opt.text}" oninput="updateOption(${i}, 'text', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Destination Node</label>
+                            <input type="text" list="node-list" value="${opt.next_dialogue || ''}" oninput="updateOption(${i}, 'next_dialogue', this.value)">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label style="font-size: 9px;">Option Conditions</label>
+                            <div class="tag-list">${renderOptionTags(i, 'conditions', opt.conditions)}</div>
+                            <input type="text" style="font-size: 10px; padding: 4px; margin-top: 5px;" placeholder="+ add condition" onkeydown="if(event.key==='Enter'){addOptionFlag(${i}, 'conditions', this.value); this.value=''}">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label style="font-size: 9px;">Option Events</label>
+                            <div class="tag-list">${renderOptionTags(i, 'events', opt.events)}</div>
+                            <input type="text" style="font-size: 10px; padding: 4px; margin-top: 5px;" placeholder="+ add event" onkeydown="if(event.key==='Enter'){addOptionFlag(${i}, 'events', this.value); this.value=''}">
+                        </div>
+                        <button class="danger" style="width: 100%; margin-top: 15px; background: transparent;" onclick="removeOption(${i})">Remove Option</button>
+                    </div>
+                `).join('')}
+            </div>
+
+            <datalist id="node-list">
+                ${Object.keys(dialogueData[currentNPC]).map(id => `<option value="${id}">`).join('')}
+            </datalist>
+
+            <div style="margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <button class="danger" style="width: 100%;" onclick="deleteNode()">Delete Node Permanently</button>
+            </div>
+        `;
+    }
+
+    function renderTags(field, tags) {
+        return (tags || []).map((t, i) => `
+            <div class="tag">${t}<span class="remove" onclick="removeFlag('${field}', ${i})">×</span></div>
+        `).join('');
+    }
+
+    function renderOptionTags(optIdx, field, tags) {
+        return (tags || []).map((t, i) => `
+            <div class="tag">${t}<span class="remove" onclick="removeOptionFlag(${optIdx}, '${field}', ${i})">×</span></div>
+        `).join('');
+    }
+
+    // --- Mutation Helpers ---
+
+    function updateNode(field, val) {
+        dialogueData[currentNPC][selectedNodeId][field] = val || null;
+        renderGraph();
+    }
+
+    function renameNode(newId) {
+        if (!newId || dialogueData[currentNPC][newId]) return;
+        const node = dialogueData[currentNPC][selectedNodeId];
+        const pos = nodesPos[currentNPC][selectedNodeId];
+        
+        delete dialogueData[currentNPC][selectedNodeId];
+        delete nodesPos[currentNPC][selectedNodeId];
+        
+        dialogueData[currentNPC][newId] = node;
+        nodesPos[currentNPC][newId] = pos;
+        selectedNodeId = newId;
+        renderGraph();
+        renderInspector();
+    }
+
+    function addFlag(field, val) {
+        if (!val) return;
+        dialogueData[currentNPC][selectedNodeId][field].push(val);
+        renderInspector();
+    }
+
+    function removeFlag(field, idx) {
+        dialogueData[currentNPC][selectedNodeId][field].splice(idx, 1);
+        renderInspector();
+    }
+
+    function addOption() {
+        dialogueData[currentNPC][selectedNodeId].options.push({ text: "...", next_dialogue: null, conditions: [], events: [] });
+        renderInspector();
+        renderGraph();
+    }
+
+    function updateOption(idx, field, val) {
+        dialogueData[currentNPC][selectedNodeId].options[idx][field] = val || null;
+        renderGraph();
+    }
+
+    function addOptionFlag(optIdx, field, val) {
+        if (!val) return;
+        dialogueData[currentNPC][selectedNodeId].options[optIdx][field].push(val);
+        renderInspector();
+    }
+
+    function removeOptionFlag(optIdx, field, idx) {
+        dialogueData[currentNPC][selectedNodeId].options[optIdx][field].splice(idx, 1);
+        renderInspector();
+    }
+
+    function removeOption(idx) {
+        dialogueData[currentNPC][selectedNodeId].options.splice(idx, 1);
+        renderInspector();
+        renderGraph();
+    }
+
+    function addNode() {
+        const id = "node_" + Math.random().toString(36).substr(2, 5);
+        dialogueData[currentNPC][id] = { text: "", options: [], conditions: [], events: [], next_dialogue: null };
+        selectNode(id);
+    }
+
+    function deleteNode() {
+        if (selectedNodeId === 'start') return;
+        if (confirm("Delete node?")) {
+            delete dialogueData[currentNPC][selectedNodeId];
+            delete nodesPos[currentNPC][selectedNodeId];
+            selectedNodeId = null;
+            renderGraph();
+            renderInspector();
+        }
+    }
+
+    function addNPC() {
+        const name = prompt("NPC Name:");
+        if (!name || dialogueData[name]) return;
+        dialogueData[name] = { "start": { text: "Hello", options: [], conditions: [], events: [], next_dialogue: null } };
+        selectNPC(name);
+    }
+
+    // --- Interaction Logic ---
+
+    let isDragging = false;
+    let dragTarget = null;
+    let dragOffset = { x: 0, y: 0 };
+    let canvasPan = { x: 0, y: 0 };
+
+    function startNodeDrag(e, id) {
+        isDragging = true;
+        dragTarget = id;
+        const pos = nodesPos[currentNPC][id];
+        dragOffset = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+        e.stopPropagation();
+    }
+
+    function startCanvasPan(e) {
+        // Only pan if we didn't click on a node or other interactive UI
+        if (e.target.closest('.node') || e.target.closest('.toolbar') || e.target.closest('button')) return;
+        
+        isDragging = true;
+        dragTarget = 'canvas';
+        dragOffset = { x: e.clientX - canvasPan.x, y: e.clientY - canvasPan.y };
+    }
+
+    function toggleSidebar(id) {
+        document.getElementById(id).classList.toggle('collapsed');
+    }
+
+    function recenter() {
+        canvasPan = { x: 0, y: 0 };
+        updateCanvasTransform();
+    }
+
+    function updateCanvasTransform() {
+        nodesLayerEl.style.transform = `translate(${canvasPan.x}px, ${canvasPan.y}px)`;
+        svgEl.style.transform = `translate(${canvasPan.x}px, ${canvasPan.y}px)`;
+        canvasContainer.style.backgroundPosition = `${canvasPan.x}px ${canvasPan.y}px`;
+    }
+
+    window.onmousemove = e => {
+        if (!isDragging) return;
+        if (dragTarget === 'canvas') {
+            canvasPan = { x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y };
+            updateCanvasTransform();
+        } else {
+            nodesPos[currentNPC][dragTarget] = { x: (e.clientX - dragOffset.x) - canvasPan.x, y: (e.clientY - dragOffset.y) - canvasPan.y };
+            renderGraph();
+        }
+    };
+
+    window.onmouseup = () => { isDragging = false; dragTarget = null; };
+
+    function searchNodes() {
+        const q = document.getElementById('node-search').value.toLowerCase();
+        document.querySelectorAll('.node').forEach(n => {
+            const id = n.id.replace('node-', '').toLowerCase();
+            const text = n.querySelector('.node-body').innerText.toLowerCase();
+            const match = id.includes(q) || text.includes(q);
+            n.style.opacity = match ? "1" : "0.2";
+            if (match && q) n.style.borderColor = "var(--accent-color)";
+            else n.style.borderColor = "var(--border-color)";
+        });
+    }
+
+    function autoLayout() {
+        if (!currentNPC) return;
+        const nodes = Object.keys(dialogueData[currentNPC]);
+        nodes.forEach((id, i) => {
+            nodesPos[currentNPC][id] = { x: 100 + (i % 4) * 300, y: 100 + Math.floor(i / 4) * 200 };
+        });
+        renderGraph();
+    }
+
+    init();
+</script>
+</body>
+</html>

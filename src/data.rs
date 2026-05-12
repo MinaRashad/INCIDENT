@@ -34,12 +34,28 @@ const MAIN_METADATA_FILE:&str = "main.db";
 /// Panics if the database cannot be opened, schema cannot be read,
 /// or if the database has already been initialized on this thread
 pub fn init_db() {
-
-    let is_new = !Path::new(MAIN_METADATA_FILE).exists();
+    let exists = Path::new(MAIN_METADATA_FILE).exists();
+    let len = fs::metadata(MAIN_METADATA_FILE).map(|m| m.len()).unwrap_or(0);
 
     // this function creates/opens the database
     let conn = Connection::open(MAIN_METADATA_FILE)
         .expect("Failed to open main.db");
+
+    // A more robust check: does the metadata table exist?
+    let is_new = !exists || len == 0 || (|| -> Result<bool, rusqlite::Error> {
+        let mut stmt = conn.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='metadata'")?;
+        Ok(!stmt.exists([])?)
+    })().unwrap_or(true);
+
+
+    // Optimized pragmas for wasm environment.
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = conn.execute("PRAGMA journal_mode=DELETE;", []);
+        let _ = conn.execute("PRAGMA locking_mode=EXCLUSIVE;", []);
+        let _ = conn.execute("PRAGMA temp_store=MEMORY;", []);
+        let _ = conn.execute("PRAGMA synchronous=OFF;", []);
+    }
 
     if is_new {
         let schema = fs::read_to_string(DEFAULT_METADATA_FILE)
@@ -47,6 +63,13 @@ pub fn init_db() {
 
         conn.execute_batch(&schema)
             .expect("Failed to initialize database");
+    }
+
+    // Final enforcement of journal mode after schema (which might have had its own pragmas)
+    #[cfg(target_arch = "wasm32")]
+    {
+        let mode: String = conn.query_row("PRAGMA journal_mode=DELETE", [], |r| r.get(0)).unwrap_or_default();
+        eprintln!("[game] Final journal_mode: {}", mode);
     }
 
     METADATA_DB.with(|db| {

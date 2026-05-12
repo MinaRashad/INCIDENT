@@ -12,11 +12,32 @@ log = "0.4.29"
 rand = "0.9.0"
 rascii_art = "0.4.5"
 ratatui = { version = "0.30.0", features = ["crossterm"] }
-rodio = "0.21.1"
-rusqlite = { version = "0.38.0", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 sha2 = "0.10.9"
 strip-ansi-escapes = "0.2.1"
+# SQLite is compiled from the bundled C source. On native that uses the system
+# C compiler; for wasm32-wasip1 it needs a wasm-capable clang — point cargo at a
+# wasi-sdk via env vars (see web/build.sh, which sets CC_wasm32_wasip1 etc.).
+# The DB file lives in the WASI in-memory filesystem and is persisted to
+# IndexedDB by web/worker.js (the PersistedFile machinery).
+rusqlite = { version = "0.38.0", features = ["bundled"] }
+
+# --- native-only deps -------------------------------------------------------
+#   * rodio: no audio device under wasi — the wasm build uses `sound_wasm.rs`,
+#     which forwards to the host's Web Audio bridge instead.
+#   * terminal_size / whoami: replaced on wasm (terminal size comes from
+#     `wasm_host`; the player name comes from the INCIDENT_PLAYER_NAME env var).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rodio = "0.21.1"
 terminal_size = "0.4.3"
 whoami = "2.1.1"
+
+# `crossterm` doesn't build for wasm32-wasip1 upstream (mio / signal-hook /
+# termios). We vendor it under vendor/crossterm/ with an added `wasi` backend in
+# its `sys` modules: raw-mode is a no-op, terminal size comes from the browser
+# host, and the event source reads raw bytes from stdin (xterm.js sends them)
+# and feeds crossterm's own ANSI parser. Native targets are unaffected — the new
+# code is all behind `#[cfg(target_arch = "wasm32")]`.
+[patch.crates-io]
+crossterm = { path = "vendor/crossterm" }

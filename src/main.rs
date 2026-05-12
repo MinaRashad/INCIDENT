@@ -4,10 +4,22 @@ mod views;
 mod animate;
 mod windows;
 mod data;
-mod sound;
 mod game_state;
 mod util;
 mod events;
+
+// `sound` has two implementations behind one API: the native one (rodio) and a
+// wasm one that forwards to the browser's Web Audio via `wasm_host`.
+#[cfg(not(target_arch = "wasm32"))]
+mod sound;
+#[cfg(target_arch = "wasm32")]
+#[path = "sound_wasm.rs"]
+mod sound;
+
+// Imports the browser host exposes to the wasm build (sound, "open window",
+// terminal size). Not compiled on native.
+#[cfg(target_arch = "wasm32")]
+mod wasm_host;
 
 use std::{env, io::Error, path::PathBuf};
 use log;
@@ -54,6 +66,13 @@ fn main() {
     }
     
     loop {
+        // On wasm there are no threads, so the chat/event "masters" can't run
+        // in the background — pump them once per state transition instead.
+        #[cfg(target_arch = "wasm32")]
+        {
+            chat::tick();
+            events::tick();
+        }
         state = state.run();
     };
 
@@ -70,9 +89,14 @@ fn init()->Result<(), Error>{
     data::player::init_player();
     env_logger::init();
 
-    // TEMPORARY: spawn the chat
-    chat::spawn_chat_master();
-    events::spawn_all_seeing_eye();
-    
+    // Background processors. On native these are real threads; on wasm they're
+    // pumped cooperatively from the game loop (and from the chat view's poll
+    // loop) via `chat::tick()` / `events::tick()`.
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        chat::spawn_chat_master();
+        events::spawn_all_seeing_eye();
+    }
+
     Ok(())
 }

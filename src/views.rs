@@ -220,7 +220,13 @@ pub fn password_access(path: PathBuf) -> GameState {
     let entry = Entry { path: path.clone() };
      let data = metadata(&entry);
     if let Some(password_sha256hash) = data.password {
-        
+
+        // `read_line` below needs the terminal in cooked/canonical mode (line
+        // editing + echo). Make that explicit in case a prior screen left raw
+        // mode on; on the browser host this is also what tells xterm.js to
+        // line-edit and echo the typed password.
+        let _ = crossterm::terminal::disable_raw_mode();
+
         terminal::clear_screen();
         println!("\n");
         

@@ -1,0 +1,46 @@
+{
+  "wasm": "./dist/incident.wasm",
+  "assets": "./dist/assets-manifest.json",
+  "sounds": {
+    "access_denied": [
+      "./dist/assets/sounds/access_denied/freesound_community-access-denied-101308.wav"
+    ],
+    "bad": [
+      "./dist/assets/sounds/bad/click-2.wav"
+    ],
+    "boot": [
+      "./dist/assets/sounds/boot/boot.mp3",
+      "./dist/assets/sounds/boot/boot2.mp3"
+    ],
+    "error": [
+      "./dist/assets/sounds/error/voicebosch-error-message-182475.wav"
+    ],
+    "good": [
+      "./dist/assets/sounds/good/freesound_community-rightanswer-95219.wav"
+    ],
+    "gui_feedback": [
+      "./dist/assets/sounds/gui_feedback/select.wav"
+    ],
+    "loud_humming": [
+      "./dist/assets/sounds/loud_humming/loud_humming.mp3"
+    ],
+    "low_humming": [
+      "./dist/assets/sounds/low_humming/low_humming.mp3"
+    ],
+    "sad": [
+      "./dist/assets/sounds/sad/looperman-l-3008776-0387767-sad-melodic-synthwave-style-melodics.wav"
+    ],
+    "scroll": [
+      "./dist/assets/sounds/scroll/click-3.wav"
+    ],
+    "space": [
+      "./dist/assets/sounds/space/analog-clack-fx_136bpm.wav",
+      "./dist/assets/sounds/space/the-sound-of-a-slow-press-on-a-button-on-an-office-keyboard.mp3",
+      "./dist/assets/sounds/space/the-sound-of-pressing-the-spacebar-on-the-keyboard-space.mp3"
+    ],
+    "type": [
+      "./dist/assets/sounds/type/short-thudding-keystroke-sound.mp3",
+      "./dist/assets/sounds/type/soft-soft-keystroke.mp3"
+    ]
+  }
+}

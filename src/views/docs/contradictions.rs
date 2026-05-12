@@ -18,7 +18,7 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
     // decorations
     play_contradiction_animation();
     let sink = sound::play_forever(sound::SoundCategory::LowHumming)
-                        .unwrap_or(rodio::Sink::new().0);
+                        .unwrap_or(sound::idle_sink());
 
     // step 1: select second document
     let second_document = choose_file("Which document does it contradict?");
@@ -27,7 +27,7 @@ pub fn mark_contradiction(first_doc:PathBuf) -> GameState {
     drop(sink);
 
     let sink = sound::play_forever(sound::SoundCategory::LoudHumming)
-                            .unwrap_or(rodio::Sink::new().0);
+                            .unwrap_or(sound::idle_sink());
     
     sink.set_volume(0.3);
 

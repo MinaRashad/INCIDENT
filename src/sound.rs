@@ -216,3 +216,9 @@ pub fn keystroke_play(c:char)->Option<Duration>{
 pub fn boot_play()-> Option<Duration>{
     play(SoundCategory::Boot)
 }
+
+/// A detached, silent sink, used as a harmless fallback when `play_forever`
+/// returns `None`. The wasm build provides an equivalent in `sound_wasm.rs`.
+pub fn idle_sink() -> rodio::Sink {
+    rodio::Sink::new().0
+}

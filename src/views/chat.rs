@@ -45,6 +45,14 @@ pub fn start()->GameState{
     
 
     while chat_app_state.running {
+        // On wasm there's no background thread feeding the chat — pump the
+        // chat/event masters here so new messages arrive while the view is open.
+        #[cfg(target_arch = "wasm32")]
+        {
+            crate::data::chat::tick();
+            crate::events::tick();
+        }
+
         // check new messages
         update_chat(&mut chat_app_state);
 

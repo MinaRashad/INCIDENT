@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>INCIDENT</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: "Pixelify Sans", "Cascadia Mono", "Consolas", monospace;
+    }
+    #terminal {
+      position: absolute;
+      inset: 0;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    #boot {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64fa64;
+      background: #000;
+      z-index: 10;
+      letter-spacing: 2px;
+    }
+    #boot.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <div id="boot">LOADING&hellip;</div>
+
+  <!-- xterm.js core + addons (no bundler required) -->
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.js"></script>
+
+  <script type="module" src="./host.js"></script>
+</body>
+</html>

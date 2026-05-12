@@ -1,3 +1,4 @@
+#[cfg(not(target_arch = "wasm32"))]
 use terminal_size::{Width, Height, terminal_size};
 use std::io::{self, Write};
 use std::time::Duration;
@@ -21,6 +22,7 @@ pub const CSI :&str="\x1B[";
 
 /// Returns the current terminal size as [width, height]
 /// Returns [0, 0] if unable to retrieve terminal size
+#[cfg(not(target_arch = "wasm32"))]
 pub fn size() -> [usize;2]
 {
     let size: Option<(Width, Height)> = terminal_size();
@@ -31,6 +33,13 @@ pub fn size() -> [usize;2]
         println!("Unable to retrieve the terminal size");
         [0,0]
     }
+}
+
+/// Returns the current terminal size as [width, height], queried from the
+/// browser host (xterm.js cols/rows). See `crate::wasm_host`.
+#[cfg(target_arch = "wasm32")]
+pub fn size() -> [usize;2] {
+    crate::wasm_host::terminal_size()
 }
 
 /// Clears the entire screen and moves cursor to top-left (1,1)

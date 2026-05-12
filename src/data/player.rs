@@ -1,17 +1,28 @@
+#[cfg(not(target_arch = "wasm32"))]
 use whoami;
 
 use crate::data::METADATA_DB;
 
+/// Best-effort current user name. On wasm there's no OS user, so the browser
+/// host can supply one via the `INCIDENT_PLAYER_NAME` env var; otherwise "You".
+#[cfg(not(target_arch = "wasm32"))]
+fn current_username() -> String {
+    match whoami::realname().or(whoami::username()) {
+        Ok(name) => name,
+        Err(_) => "You".to_string(),
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn current_username() -> String {
+    std::env::var("INCIDENT_PLAYER_NAME")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "You".to_string())
+}
 
 pub fn init_player(){
-    let user = 
-            whoami::realname()
-            .or(whoami::username());
-
-    let user = match user{
-        Ok(name)=>name,
-        Err(_)=>"You".to_string()
-    };
+    let user = current_username();
     METADATA_DB.with(|db|{
         let conn = db.get().expect("Unable to get db connection");
         conn.execute(

@@ -214,41 +214,36 @@ pub fn add_event(event_tag:String){
 }
 
 
+/// One pass of the event processor: drains the unprocessed history and
+/// activates each event's effect. Idempotent — each row is marked processed
+/// before its effect runs, so re-calling does nothing until new events arrive.
+///
+/// On native this is looped on a background thread (`run_event_master`); on
+/// wasm (no threads) it's driven cooperatively from the game loop.
+pub fn tick() {
+    let event_map = init_events();
+    for (id, event) in get_unprocessed_history() {
+        // Mark as processed FIRST: some effects (e.g. End) kill the process,
+        // and a row that never gets marked would be reprocessed forever.
+        let _ = process_event(id as i64);
+        if let Some(effect) = event_map.get(&event) {
+            effect.activate();
+        }
+    }
+}
+
 /// Spawns the event processer
 /// it checks the game history and activates relevant effects
+#[cfg(not(target_arch = "wasm32"))]
 pub fn spawn_all_seeing_eye(){
     std::thread::spawn(run_event_master);
 }
 
-fn run_event_master()->Option<()>{
-    
+#[cfg(not(target_arch = "wasm32"))]
+fn run_event_master() {
     data::init_db();
-    let event_map = init_events();
     loop {
-        // get the un processed history
-        let unprocessed = get_unprocessed_history();
-
-        // loop through it
-        for (id,event) in unprocessed{            
-            // process each event
-
-            // Important NOTE:
-            // mark as processed FIRST
-            // I initially had this after processing but some events
-            // like end, kills the entire process so it never gets
-            // marked as process and gets processed each time from
-            // now on
-            // the potential problem is if the effect failed
-
-            let result = process_event(id as i64);
-
-
-            if let Some(effect) = event_map.get(&event){
-                effect.activate();
-            }
-            
-        }
-
-        std::thread::sleep(Duration::from_secs(1));       
+        tick();
+        std::thread::sleep(Duration::from_secs(1));
     }
 }
